@@ -16,7 +16,7 @@ const CONFIG = {
 
   // การตั้งค่าชำระเงินผ่าน PromptPay QR
   // สามารถเปลี่ยนเป็นเบอร์โทรศัพท์ (10 หลัก) หรือเลขประจำตัวประชาชน/นิติบุคคล (13 หลัก) ของร้าน
-  PROMPTPAY_NUMBER: "0812345678",
+  PROMPTPAY_NUMBER: "0644890672",
   PROMPTPAY_NAME: "GEONCE OFFICIAL STORE",
   BANK_NAME: "พร้อมเพย์ (PromptPay)",
 
