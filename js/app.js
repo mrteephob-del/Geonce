@@ -189,14 +189,17 @@ const App = {
 
       if (result.status === "success" && Array.isArray(result.data) && result.data.length > 0) {
         this.products = result.data;
-        console.log("✅ โหลดสินค้าเสื้อผ้า GEONCE สำเร็จ:", this.products);
+        this.apiError = false;
+        console.log("✅ โหลดสินค้าจาก Google Sheets สำเร็จ:", this.products);
       } else {
-        console.log("ℹ️ ไม่พบสินค้าในชีท: แสดงสินค้าจำลอง GEONCE");
-        this.products = (CONFIG.MOCK_PRODUCTS && CONFIG.MOCK_PRODUCTS.length > 0) ? CONFIG.MOCK_PRODUCTS : [];
+        console.log("ℹ️ ไม่พบสินค้าที่ ACTIVE ใน Google Sheets");
+        this.products = [];
+        this.apiError = false;
       }
     } catch (err) {
-      console.error("❌ ไม่สามารถดึงสินค้าจาก API ได้ (ติดสิทธิ์การเข้าถึงใน Apps Script):", err);
-      this.products = (CONFIG.MOCK_PRODUCTS && CONFIG.MOCK_PRODUCTS.length > 0) ? CONFIG.MOCK_PRODUCTS : [];
+      console.error("❌ ไม่สามารถดึงสินค้าจาก API ได้ (ติดสิทธิ์การเข้าถึง Google Apps Script):", err);
+      this.products = [];
+      this.apiError = true;
     }
 
     this.renderCategories();
@@ -248,6 +251,24 @@ const App = {
     });
 
     if (filtered.length === 0) {
+      if (this.apiError) {
+        productGrid.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon" style="font-size: 2.8rem;">⚠️</div>
+            <h3 style="margin-top: 10px;">ยังไม่สามารถดึงข้อมูลจาก Google Sheets ได้</h3>
+            <p style="color: var(--text-muted); max-width: 420px; margin: 8px auto 16px; font-size: 0.9rem;">Google Apps Script กำลังติดสิทธิ์การเข้าถึง (Only myself)</p>
+            <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 18px; font-size: 0.82rem; text-align: left; max-width: 420px; margin: 0 auto; line-height: 1.6; color: var(--text-primary);">
+              <span style="color: #60A5FA; font-weight: 600;">วิธีเปิดให้ชีทเชื่อมต่อกับเว็บ:</span><br>
+              1. ใน Apps Script กดปุ่มสีน้ำเงิน <b>Deploy > Manage deployments</b><br>
+              2. กดไอคอนดินสอ <b>✏️ (Edit)</b> > เลือก <b>New version</b><br>
+              3. เปลี่ยนช่อง <b>Who has access</b> เป็น <b>Anyone (ทุกคน)</b><br>
+              4. กด <b>Deploy</b> แล้วกลับมารีเฟรชหน้านี้ครับ
+            </div>
+          </div>
+        `;
+        return;
+      }
+
       productGrid.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">👕</div>
