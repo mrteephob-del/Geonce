@@ -1,6 +1,7 @@
 /**
  * LINE LIFF Ordering System - Google Apps Script Backend
  * ทำหน้าที่เป็น REST API (doGet / doPost) เชื่อมต่อ Google Sheets
+ * แบรนด์เสื้อผ้า: GEONCE Official Store
  */
 
 // ชื่อ Sheet ที่ใช้งาน
@@ -8,18 +9,46 @@ const SHEET_PRODUCTS = "Products";
 const SHEET_ORDERS = "Orders";
 
 /**
+ * เพิ่มเมนูลัดบน Google Sheets อัตโนมัติเมื่อเปิดไฟล์
+ * ทำให้ผู้ดูแลสามารถกดอัพเดทตารางได้โดยตรงจากหน้าชีท โดยไม่ต้องเข้าหน้าโค้ด
+ */
+function onOpen() {
+  try {
+    const ui = SpreadsheetApp.getUi();
+    ui.createMenu("⚡ GEONCE Store")
+      .addItem("🔄 อัพเดทตารางสินค้าและออเดอร์ (Reset & Update)", "updateSheetToGeonceStore")
+      .addItem("➕ เพิ่มเฉพาะสินค้าจำลอง", "createSampleClothingProducts")
+      .addToUi();
+  } catch (e) {
+    Logger.log("onOpen notice: " + e.message);
+  }
+}
+
+/**
  * จัดการ HTTP GET Requests
- * รองรับการดึงข้อมูลสินค้า: ?action=getProducts
+ * 1. ดึงรายการสินค้า: ?action=getProducts
+ * 2. สั่งอัพเดทตารางผ่าน URL: ?action=updateSheet
  */
 function doGet(e) {
   try {
     const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "getProducts";
 
+    // กรณีดึงรายการสินค้า
     if (action === "getProducts") {
       const products = fetchProducts();
       return createJsonResponse({
         status: "success",
         data: products
+      });
+    }
+
+    // กรณีสั่ง Reset / Update ตารางผ่าน GET Request
+    if (action === "updateSheet" || action === "setup" || action === "reset") {
+      updateSheetToGeonceStore();
+      return createJsonResponse({
+        status: "success",
+        message: "Google Sheet updated to GEONCE store successfully!",
+        products_count: 6
       });
     }
 
@@ -37,7 +66,7 @@ function doGet(e) {
 
 /**
  * จัดการ HTTP POST Requests
- * รองรับการบันทึกคำสั่งซื้อใหม่
+ * รองรับการบันทึกคำสั่งซื้อใหม่ พร้อมช่องทางการชำระเงิน PromptPay QR
  */
 function doPost(e) {
   // ใช้ LockService ป้องกันปัญหา Race Condition เมื่อมีการสั่งซื้อเข้ามาพร้อมกัน
@@ -88,7 +117,8 @@ function doPost(e) {
     // 4. บันทึกลง Sheet Orders
     let ordersSheet = ss.getSheetByName(SHEET_ORDERS);
     if (!ordersSheet) {
-      throw new Error("Sheet '" + SHEET_ORDERS + "' not found. Please run setupDatabase() first.");
+      updateSheetToGeonceStore();
+      ordersSheet = ss.getSheetByName(SHEET_ORDERS);
     }
 
     ordersSheet.appendRow([
@@ -233,75 +263,48 @@ function createJsonResponse(data) {
 
 /**
  * -------------------------------------------------------------
- * ตัวช่วย Setup โครงสร้างตาราง Products และ Orders ใน Google Sheets
+ * ฟังก์ชันหลัก: อัพเดทตาราง Google Sheet ทั้งหมดเป็นแบรนด์ GEONCE
+ * - รีเซ็ตชีท Products: ลบข้อมูลเก่า ใส่หัวตาราง และสินค้าเสื้อผ้า GEONCE 6 รายการ
+ * - ตรวจสอบ/อัพเดทชีท Orders: ให้มีหัวตารางครบ 13 คอลัมน์ (รวม Payment Method & Status)
+ * - จัดรูปแบบสีและขนาดคอลัมน์ให้อ่านง่าย สไตล์พรีเมียม
  * -------------------------------------------------------------
  */
-function setupDatabase() {
+function updateSheetToGeonceStore() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
   if (!ss) {
     throw new Error("⚠️ ไม่พบ Google Sheet: กรุณาเปิด Apps Script จากเมนู 'ส่วนขยาย (Extensions) > Apps Script' ภายใน Google Sheet");
   }
-  
-  // 1. ตั้งค่า Sheet: Products
+
+  // ==========================================
+  // 1. จัดการชีท: Products (สินค้าเสื้อผ้า GEONCE)
+  // ==========================================
   let productsSheet = ss.getSheetByName(SHEET_PRODUCTS);
   if (!productsSheet) {
     productsSheet = ss.insertSheet(SHEET_PRODUCTS);
   }
-  
+
+  // เคลียร์ข้อมูลเดิมทั้งหมดในชีท Products เพื่อลบข้อมูลคาเฟ่/สินค้าตัวอย่างเดิม
+  productsSheet.clear();
+
+  // กำหนด Header ของ Products
   const productHeaders = [
     ["id", "name", "category", "price", "description", "image_url", "stock", "status"]
   ];
   productsSheet.getRange(1, 1, 1, productHeaders[0].length).setValues(productHeaders);
-  
-  const headerRange = productsSheet.getRange(1, 1, 1, productHeaders[0].length);
-  headerRange.setBackground("#10B981")
-             .setFontColor("#FFFFFF")
-             .setFontWeight("bold")
-             .setHorizontalAlignment("center");
+
+  // ตกแต่ง Header ชีท Products (ธีม Streetwear ดำ-เทาเข้ม คมชัด)
+  const pHeaderRange = productsSheet.getRange(1, 1, 1, productHeaders[0].length);
+  pHeaderRange.setBackground("#0F172A") // Slate 900
+              .setFontColor("#FFFFFF")
+              .setFontWeight("bold")
+              .setFontSize(11)
+              .setHorizontalAlignment("center")
+              .setVerticalAlignment("middle");
+  productsSheet.setRowHeight(1, 38);
   productsSheet.setFrozenRows(1);
-  
-  // 2. ตั้งค่า Sheet: Orders
-  let ordersSheet = ss.getSheetByName(SHEET_ORDERS);
-  if (!ordersSheet) {
-    ordersSheet = ss.insertSheet(SHEET_ORDERS);
-  }
-  
-  const orderHeaders = [
-    ["order_id", "timestamp", "line_user_id", "customer_name", "phone", "address", "items_summary", "items_json", "total_amount", "payment_method", "payment_status", "status", "note"]
-  ];
-  ordersSheet.getRange(1, 1, 1, orderHeaders[0].length).setValues(orderHeaders);
-  
-  const orderHeaderRange = ordersSheet.getRange(1, 1, 1, orderHeaders[0].length);
-  orderHeaderRange.setBackground("#3B82F6")
-                  .setFontColor("#FFFFFF")
-                  .setFontWeight("bold")
-                  .setHorizontalAlignment("center");
-  ordersSheet.setFrozenRows(1);
 
-  productsSheet.autoResizeColumns(1, productHeaders[0].length);
-  ordersSheet.autoResizeColumns(1, orderHeaders[0].length);
-  
-  Logger.log("✅ สร้างและตั้งค่าตาราง Products และ Orders เรียบร้อยแล้ว!");
-}
-
-/**
- * ฟังก์ชันสร้างสินค้าจำลองแบรนด์เสื้อผ้า GEONCE ลงใน Google Sheet Products
- * วิธีใช้: เลือกฟังก์ชัน "createSampleClothingProducts" จากเมนูด้านบน แล้วกด Run
- */
-function createSampleClothingProducts() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  if (!ss) {
-    throw new Error("⚠️ กรุณาเปิด Apps Script จากเมนู 'ส่วนขยาย > Apps Script' ใน Google Sheet");
-  }
-
-  let sheet = ss.getSheetByName(SHEET_PRODUCTS);
-  if (!sheet) {
-    setupDatabase();
-    sheet = ss.getSheetByName(SHEET_PRODUCTS);
-  }
-
-  const sampleProducts = [
+  // รายการสินค้าเสื้อผ้าแบรนด์ GEONCE คอลเลกชันสตรีทแวร์
+  const geonceProducts = [
     [
       "G-TS01",
       "GEONCE Heavyweight Boxy Tee (Black)",
@@ -364,18 +367,80 @@ function createSampleClothingProducts() {
     ]
   ];
 
-  // เพิ่มข้อมูลลงใน Sheet Products ต่อจากแถวเดิม (หรือเริ่มแถวที่ 2)
-  const startRow = Math.max(2, sheet.getLastRow() + 1);
-  sheet.getRange(startRow, 1, sampleProducts.length, sampleProducts[0].length).setValues(sampleProducts);
-  sheet.autoResizeColumns(1, sampleProducts[0].length);
-  
-  Logger.log("✅ เพิ่มสินค้าเสื้อผ้าจำลองแบรนด์ GEONCE จำนวน " + sampleProducts.length + " รายการ เรียบร้อยแล้ว!");
+  // ใส่ข้อมูลสินค้าลงใน Products
+  productsSheet.getRange(2, 1, geonceProducts.length, geonceProducts[0].length).setValues(geonceProducts);
+
+  // ตกแต่ง Format คอลัมน์ให้ดูสวยงาม เป็นระเบียบ
+  productsSheet.getRange(2, 1, geonceProducts.length, 1).setHorizontalAlignment("center"); // id
+  productsSheet.getRange(2, 3, geonceProducts.length, 1).setHorizontalAlignment("center"); // category
+  productsSheet.getRange(2, 4, geonceProducts.length, 1).setNumberFormat("#,##0").setHorizontalAlignment("right"); // price
+  productsSheet.getRange(2, 7, geonceProducts.length, 1).setHorizontalAlignment("center"); // stock
+  const statusRange = productsSheet.getRange(2, 8, geonceProducts.length, 1);
+  statusRange.setHorizontalAlignment("center").setFontColor("#16A34A").setFontWeight("bold"); // status
+
+  for (let r = 2; r <= geonceProducts.length + 1; r++) {
+    productsSheet.setRowHeight(r, 32);
+  }
+  productsSheet.autoResizeColumns(1, productHeaders[0].length);
+  productsSheet.setColumnWidth(2, 280); // name
+  productsSheet.setColumnWidth(5, 340); // description
+  productsSheet.setColumnWidth(6, 260); // image_url
+
+  // ==========================================
+  // 2. จัดการชีท: Orders (ออเดอร์คำสั่งซื้อ)
+  // ==========================================
+  let ordersSheet = ss.getSheetByName(SHEET_ORDERS);
+  if (!ordersSheet) {
+    ordersSheet = ss.insertSheet(SHEET_ORDERS);
+  }
+
+  // กำหนด Header ครบ 13 คอลัมน์ สำหรับรองรับการโอนเงิน PromptPay & LIFF
+  const orderHeaders = [
+    ["order_id", "timestamp", "line_user_id", "customer_name", "phone", "address", "items_summary", "items_json", "total_amount", "payment_method", "payment_status", "status", "note"]
+  ];
+  ordersSheet.getRange(1, 1, 1, orderHeaders[0].length).setValues(orderHeaders);
+
+  // ตกแต่ง Header ชีท Orders (ธีมน้ำเงินสุขุม Deep Royal Navy)
+  const oHeaderRange = ordersSheet.getRange(1, 1, 1, orderHeaders[0].length);
+  oHeaderRange.setBackground("#1E3A8A") // Blue 900
+              .setFontColor("#FFFFFF")
+              .setFontWeight("bold")
+              .setFontSize(11)
+              .setHorizontalAlignment("center")
+              .setVerticalAlignment("middle");
+  ordersSheet.setRowHeight(1, 38);
+  ordersSheet.setFrozenRows(1);
+
+  // Format Total Amount คอลัมน์ 9
+  if (ordersSheet.getLastRow() > 1) {
+    ordersSheet.getRange(2, 9, ordersSheet.getLastRow() - 1, 1).setNumberFormat("#,##0.00");
+  }
+
+  ordersSheet.autoResizeColumns(1, orderHeaders[0].length);
+  ordersSheet.setColumnWidth(1, 180); // order_id
+  ordersSheet.setColumnWidth(6, 280); // address
+  ordersSheet.setColumnWidth(7, 300); // items_summary
+
+  Logger.log("✅ อัพเดทตาราง Products และ Orders เป็นข้อมูลแบรนด์ GEONCE ครบถ้วนเรียบร้อยแล้ว!");
 }
 
 /**
- * ฟังก์ชันสำรอง: ป้องกัน Error เมื่อกด Run โดยที่ Apps Script ยังจำชื่อ myFunction
+ * ฟังก์ชันสร้างสินค้าจำลองแบรนด์เสื้อผ้า GEONCE เพิ่มเติม
  */
-function myFunction() {
-  createSampleClothingProducts();
+function createSampleClothingProducts() {
+  updateSheetToGeonceStore();
 }
 
+/**
+ * ฟังก์ชันเริ่มต้นในการ Setup ระบบ
+ */
+function setupDatabase() {
+  updateSheetToGeonceStore();
+}
+
+/**
+ * ฟังก์ชันสำรอง: รองรับเมื่อกด Run โดยไม่ได้เปลี่ยนชื่อฟังก์ชัน (Apps Script จำ myFunction)
+ */
+function myFunction() {
+  updateSheetToGeonceStore();
+}
