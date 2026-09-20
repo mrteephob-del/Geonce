@@ -286,9 +286,96 @@ function setupDatabase() {
 }
 
 /**
+ * ฟังก์ชันสร้างสินค้าจำลองแบรนด์เสื้อผ้า GEONCE ลงใน Google Sheet Products
+ * วิธีใช้: เลือกฟังก์ชัน "createSampleClothingProducts" จากเมนูด้านบน แล้วกด Run
+ */
+function createSampleClothingProducts() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    throw new Error("⚠️ กรุณาเปิด Apps Script จากเมนู 'ส่วนขยาย > Apps Script' ใน Google Sheet");
+  }
+
+  let sheet = ss.getSheetByName(SHEET_PRODUCTS);
+  if (!sheet) {
+    setupDatabase();
+    sheet = ss.getSheetByName(SHEET_PRODUCTS);
+  }
+
+  const sampleProducts = [
+    [
+      "G-TS01",
+      "GEONCE Heavyweight Boxy Tee (Black)",
+      "T-Shirts",
+      790,
+      "เสื้อยืดผ้า Cotton Comb 100% สกรีนลาย GEONCE ทรง Boxy Oversized หนา 240 GSM",
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=600&auto=format&fit=crop&q=80",
+      50,
+      "ACTIVE"
+    ],
+    [
+      "G-TS02",
+      "GEONCE Vintage Acid Wash Tee",
+      "T-Shirts",
+      850,
+      "เสื้อยืดฟอกวินเทจ สไตล์สตรีท เนื้อผ้านุ่ม ระบายอากาศได้ดีเยี่ยม ลายซิกเนเจอร์",
+      "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600&auto=format&fit=crop&q=80",
+      40,
+      "ACTIVE"
+    ],
+    [
+      "G-HD01",
+      "GEONCE Cyberpunk Oversized Hoodie",
+      "Hoodies",
+      1590,
+      "เสื้อฮู้ดดี้ทรงหลวม ผ้าเฟรนช์เทอร์รี่หนานุ่ม ลายกราฟิกสตรีทแวร์ร่วมสมัย",
+      "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=600&auto=format&fit=crop&q=80",
+      30,
+      "ACTIVE"
+    ],
+    [
+      "G-PT01",
+      "GEONCE Tactical Cargo Pants (Dark Slate)",
+      "Pants",
+      1290,
+      "กางเกงคาร์โก้สตรีทแวร์ กระเป๋าข้างมัลติฟังก์ชัน ผ้า Ripstop ทนทาน ทรงกระบอกตรง",
+      "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=600&auto=format&fit=crop&q=80",
+      25,
+      "ACTIVE"
+    ],
+    [
+      "G-AC01",
+      "GEONCE Nylon Crossbody Bag",
+      "Accessories",
+      690,
+      "กระเป๋าสะพายข้างผ้าไนลอนกันน้ำ สายสะพายปรับระดับได้ สกรีนโลโก้ GEONCE",
+      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&auto=format&fit=crop&q=80",
+      35,
+      "ACTIVE"
+    ],
+    [
+      "G-AC02",
+      "GEONCE Embroidered Bucket Hat",
+      "Accessories",
+      590,
+      "หมวกบักเก็ตปักโลโก้ GEONCE มินิมอล ผ้าคอตตอนทวิลล์พรีเมียม สวมใส่สบาย",
+      "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=600&auto=format&fit=crop&q=80",
+      45,
+      "ACTIVE"
+    ]
+  ];
+
+  // เพิ่มข้อมูลลงใน Sheet Products ต่อจากแถวเดิม (หรือเริ่มแถวที่ 2)
+  const startRow = Math.max(2, sheet.getLastRow() + 1);
+  sheet.getRange(startRow, 1, sampleProducts.length, sampleProducts[0].length).setValues(sampleProducts);
+  sheet.autoResizeColumns(1, sampleProducts[0].length);
+  
+  Logger.log("✅ เพิ่มสินค้าเสื้อผ้าจำลองแบรนด์ GEONCE จำนวน " + sampleProducts.length + " รายการ เรียบร้อยแล้ว!");
+}
+
+/**
  * ฟังก์ชันสำรอง: ป้องกัน Error เมื่อกด Run โดยที่ Apps Script ยังจำชื่อ myFunction
  */
 function myFunction() {
-  setupDatabase();
+  createSampleClothingProducts();
 }
 

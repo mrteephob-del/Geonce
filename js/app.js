@@ -170,16 +170,16 @@ const App = {
       const response = await fetch(`${CONFIG.GAS_API_URL}?action=getProducts`);
       const result = await response.json();
 
-      if (result.status === "success" && Array.isArray(result.data)) {
+      if (result.status === "success" && Array.isArray(result.data) && result.data.length > 0) {
         this.products = result.data;
         console.log("✅ โหลดสินค้าเสื้อผ้า GEONCE สำเร็จ:", this.products);
       } else {
-        throw new Error(result.message || "Failed to load products");
+        console.log("ℹ️ ไม่พบสินค้าในชีท: แสดงสินค้าจำลอง GEONCE");
+        this.products = (CONFIG.MOCK_PRODUCTS && CONFIG.MOCK_PRODUCTS.length > 0) ? CONFIG.MOCK_PRODUCTS : [];
       }
     } catch (err) {
-      console.error("❌ ไม่สามารถดึงสินค้าจาก API ได้:", err);
-      showToast("ไม่สามารถโหลดสินค้าจาก Google Sheet ได้", "error");
-      this.products = [];
+      console.error("❌ ไม่สามารถดึงสินค้าจาก API ได้ (ติดสิทธิ์การเข้าถึงใน Apps Script):", err);
+      this.products = (CONFIG.MOCK_PRODUCTS && CONFIG.MOCK_PRODUCTS.length > 0) ? CONFIG.MOCK_PRODUCTS : [];
     }
 
     this.renderCategories();
