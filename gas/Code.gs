@@ -225,13 +225,16 @@ function createJsonResponse(data) {
 }
 
 /**
- * =======================================================================
- * ฟังก์ชันสำหรับติดตั้งฐานข้อมูล (Setup Database)
- * วิธีใช้: เลือกฟังก์ชัน "setupDatabase" จากแถบเมนูด้านบน แล้วกด "Run" (เรียกใช้)
- * =======================================================================
+ * -------------------------------------------------------------
+ * ตัวช่วย Setup โครงสร้างตาราง Products และ Orders ใน Google Sheets
+ * -------------------------------------------------------------
  */
 function setupDatabase() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  if (!ss) {
+    throw new Error("⚠️ ไม่พบ Google Sheet: กรุณาเปิด Apps Script จากเมนู 'ส่วนขยาย (Extensions) > Apps Script' ภายใน Google Sheet");
+  }
   
   // 1. ตั้งค่า Sheet: Products
   let productsSheet = ss.getSheetByName(SHEET_PRODUCTS);
@@ -239,13 +242,11 @@ function setupDatabase() {
     productsSheet = ss.insertSheet(SHEET_PRODUCTS);
   }
   
-  // Headers สำหรับ Products
   const productHeaders = [
     ["id", "name", "category", "price", "description", "image_url", "stock", "status"]
   ];
   productsSheet.getRange(1, 1, 1, productHeaders[0].length).setValues(productHeaders);
   
-  // ตกแต่ง Header
   const headerRange = productsSheet.getRange(1, 1, 1, productHeaders[0].length);
   headerRange.setBackground("#10B981")
              .setFontColor("#FFFFFF")
@@ -253,7 +254,7 @@ function setupDatabase() {
              .setHorizontalAlignment("center");
   productsSheet.setFrozenRows(1);
   
-  // ข้อมูลตัวอย่างสินค้า (Sample Products)
+  // ข้อมูลตัวอย่างสินค้า
   const sampleProducts = [
     [
       "P001",
@@ -307,7 +308,6 @@ function setupDatabase() {
     ]
   ];
   
-  // เพิ่มสินค้าตัวอย่างหากยังไม่มีข้อมูล
   if (productsSheet.getLastRow() === 1) {
     productsSheet.getRange(2, 1, sampleProducts.length, sampleProducts[0].length).setValues(sampleProducts);
   }
@@ -318,13 +318,11 @@ function setupDatabase() {
     ordersSheet = ss.insertSheet(SHEET_ORDERS);
   }
   
-  // Headers สำหรับ Orders
   const orderHeaders = [
     ["order_id", "timestamp", "line_user_id", "customer_name", "phone", "address", "items_summary", "items_json", "total_amount", "status", "note"]
   ];
   ordersSheet.getRange(1, 1, 1, orderHeaders[0].length).setValues(orderHeaders);
   
-  // ตกแต่ง Header
   const orderHeaderRange = ordersSheet.getRange(1, 1, 1, orderHeaders[0].length);
   orderHeaderRange.setBackground("#3B82F6")
                   .setFontColor("#FFFFFF")
@@ -332,10 +330,16 @@ function setupDatabase() {
                   .setHorizontalAlignment("center");
   ordersSheet.setFrozenRows(1);
 
-  // ปรับขนาดคอลัมน์ให้อ่านง่าย
   productsSheet.autoResizeColumns(1, productHeaders[0].length);
   ordersSheet.autoResizeColumns(1, orderHeaders[0].length);
   
   Logger.log("✅ สร้างและตั้งค่าตาราง Products และ Orders เรียบร้อยแล้ว!");
+}
+
+/**
+ * ฟังก์ชันสำรอง: ป้องกัน Error เมื่อกด Run โดยที่ Apps Script ยังจำชื่อ myFunction
+ */
+function myFunction() {
+  setupDatabase();
 }
 

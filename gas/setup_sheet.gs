@@ -3,10 +3,18 @@
  * วิธีใช้งาน:
  * 1. เปิด Google Sheet ที่ต้องการใช้งาน
  * 2. ไปที่ Extensions (ส่วนขยาย) > Apps Script
- * 3. นำโค้ดนี้ไปวาง แล้วเลือกฟังก์ชัน "setupDatabase" จากนั้นกด "Run" (เรียกใช้)
+ * 3. นำโค้ดนี้ไปวาง แล้วกดปุ่ม "Run" (เรียกใช้) ได้ทันที
+ */
+
+/**
+ * ฟังก์ชันหลักในการสร้างโครงสร้างฐานข้อมูล
  */
 function setupDatabase() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  if (!ss) {
+    throw new Error("⚠️ ไม่พบ Google Sheet: กรุณาเปิด Apps Script จากเมนู 'ส่วนขยาย (Extensions) > Apps Script' ภายใน Google Sheet เพื่อให้สคริปต์ผูกกับชีทได้ถูกต้อง");
+  }
   
   // 1. ตั้งค่า Sheet: Products
   let productsSheet = ss.getSheetByName("Products");
@@ -112,4 +120,12 @@ function setupDatabase() {
   ordersSheet.autoResizeColumns(1, orderHeaders[0].length);
   
   Logger.log("✅ สร้างและตั้งค่าตาราง Products และ Orders เรียบร้อยแล้ว!");
+}
+
+/**
+ * ฟังก์ชันสำรอง: ป้องกัน Error "Attempted to execute myFunction, but it was deleted"
+ * กรณีที่ใน Apps Script ยังเลือก myFunction อยู่ เมื่อกด Run จะเรียก setupDatabase() ทันที
+ */
+function myFunction() {
+  setupDatabase();
 }
