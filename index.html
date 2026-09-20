@@ -162,7 +162,10 @@
   <div id="checkoutModal" class="modal-overlay">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h2>ข้อมูลการจัดส่ง</h2>
+        <div class="modal-header-text">
+          <span class="step-indicator">STEP 1 OF 2</span>
+          <h2>ข้อมูลการจัดส่งพัสดุ</h2>
+        </div>
         <button id="closeCheckoutBtn" class="modal-close-btn" aria-label="ปิด">✕</button>
       </div>
       <div class="modal-body">
@@ -172,26 +175,34 @@
           </div>
 
           <div class="form-group">
-            <label for="customerNameInput">ชื่อ-นามสกุลผู้รับ *</label>
-            <input type="text" id="customerNameInput" required placeholder="ชื่อ-นามสกุล">
+            <label for="customerNameInput">
+              <span class="form-label-icon">👤</span> ชื่อ-นามสกุลผู้รับ <span class="req-star">*</span>
+            </label>
+            <input type="text" id="customerNameInput" required placeholder="ระบุชื่อและนามสกุลผู้รับ">
           </div>
 
           <div class="form-group">
-            <label for="phoneInput">เบอร์โทรศัพท์ติดต่อ *</label>
-            <input type="tel" id="phoneInput" required placeholder="08xxxxxxxx" pattern="[0-9]{9,10}">
+            <label for="phoneInput">
+              <span class="form-label-icon">📞</span> เบอร์โทรศัพท์ติดต่อ <span class="req-star">*</span>
+            </label>
+            <input type="tel" id="phoneInput" required placeholder="08xxxxxxxx (10 หลัก)" pattern="[0-9]{9,10}">
           </div>
 
           <div class="form-group">
-            <label for="addressInput">ที่อยู่จัดส่ง *</label>
-            <textarea id="addressInput" required rows="2" placeholder="บ้านเลขที่ ซอย ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์"></textarea>
+            <label for="addressInput">
+              <span class="form-label-icon">📍</span> ที่อยู่จัดส่งพัสดุ <span class="req-star">*</span>
+            </label>
+            <textarea id="addressInput" required rows="3" placeholder="ระบุบ้านเลขที่, อาคาร/หมู่บ้าน, ซอย, ถนน, แขวง/ตำบล, เขต/อำเภอ, จังหวัด, รหัสไปรษณีย์"></textarea>
           </div>
 
           <div class="form-group">
-            <label for="noteInput">หมายเหตุเพิ่มเติม</label>
-            <input type="text" id="noteInput" placeholder="เช่น ฝากไว้หน้าบ้าน, โทรแจ้งก่อนส่ง">
+            <label for="noteInput">
+              <span class="form-label-icon">📝</span> หมายเหตุเพิ่มเติม (ถ้ามี)
+            </label>
+            <input type="text" id="noteInput" placeholder="เช่น ฝากไว้ที่ป้อมยาม, โทรแจ้งก่อนส่ง">
           </div>
 
-          <button type="submit" id="toPaymentBtn" class="primary-btn" style="margin-top: 10px;">
+          <button type="submit" id="toPaymentBtn" class="primary-btn checkout-submit-btn">
             ถัดไป: สแกนชำระผ่าน PromptPay QR ❯
           </button>
         </form>
@@ -203,29 +214,36 @@
   <div id="paymentModal" class="modal-overlay">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h2>ชำระเงินผ่าน PromptPay QR</h2>
+        <div class="modal-header-text">
+          <span class="step-indicator">STEP 2 OF 2</span>
+          <h2>ชำระเงินผ่าน PromptPay QR</h2>
+        </div>
         <button id="closePaymentBtn" class="modal-close-btn" aria-label="ปิด">✕</button>
       </div>
       <div class="modal-body">
         <div class="payment-content">
           <!-- บัตรแสดงยอดเงินและ QR Code -->
           <div class="qr-card">
-            <div class="qr-brand-badge">PROMPTPAY OFFICIAL</div>
+            <div class="qr-brand-badge">
+              <span class="promptpay-logo-icon">💳</span> PROMPTPAY OFFICIAL
+            </div>
+            
             <div class="qr-amount-display">
-              <span class="qr-amount-label">ยอดที่ต้องชำระ:</span>
+              <span class="qr-amount-label">ยอดที่ต้องชำระสุทธิ</span>
               <span id="promptpayAmount" class="qr-amount-value">฿0</span>
             </div>
 
             <!-- รูปภาพ QR Code แบบ Dynamic -->
             <div class="qr-wrapper">
               <img id="promptpayQrImg" src="" alt="PromptPay QR Code" class="promptpay-qr-image">
+              <div class="qr-scan-hint">สแกนผ่านแอปธนาคารใดก็ได้</div>
             </div>
 
             <div class="promptpay-account-box">
               <div class="pp-row">
                 <span class="pp-label">พร้อมเพย์:</span>
                 <span id="promptpayNumberText" class="pp-val">0812345678</span>
-                <button type="button" id="copyPpBtn" class="copy-btn">คัดลอก</button>
+                <button type="button" id="copyPpBtn" class="copy-btn">📋 คัดลอก</button>
               </div>
               <div class="pp-row">
                 <span class="pp-label">ชื่อบัญชี:</span>
@@ -236,17 +254,31 @@
 
           <!-- คำแนะนำการส่งสลิป -->
           <div class="slip-notice-box">
-            <div class="notice-title">📸 การยืนยันชำระเงิน</div>
-            <p class="notice-desc">
-              1. สแกน QR Code หรือโอนผ่านเลขพร้อมเพย์ด้านบน<br>
-              2. กดปุ่ม <b>"ยืนยันการโอนเงิน"</b> ด้านล่างนี้<br>
-              3. <b>ส่งรูปภาพสลิปโอนเงินเข้ามาในแชท LINE</b> เพื่อให้แอดมินตรวจสอบและจัดส่งสินค้าทันที
-            </p>
+            <div class="notice-title">📸 คำแนะนำการยืนยันคำสั่งซื้อ</div>
+            <div class="notice-steps">
+              <div class="notice-step-item">
+                <span class="step-num">1</span>
+                <span>เปิดแอปธนาคารแล้วสแกน QR Code หรือโอนผ่านเลขพร้อมเพย์</span>
+              </div>
+              <div class="notice-step-item">
+                <span class="step-num">2</span>
+                <span>กดปุ่ม <b>"ยืนยันการโอนเงิน"</b> ด้านล่างนี้</span>
+              </div>
+              <div class="notice-step-item">
+                <span class="step-num">3</span>
+                <span><b>ส่งรูปสลิปโอนเงินเข้ามาในห้องแชท LINE</b> เพื่อให้ทีมงานแพ็กจัดส่งทันที</span>
+              </div>
+            </div>
           </div>
 
-          <button type="button" id="confirmPaidBtn" class="primary-btn">
-            ฉันโอนเงินเรียบร้อยแล้ว (ยืนยันคำสั่งซื้อ)
-          </button>
+          <div class="payment-actions-group">
+            <button type="button" id="confirmPaidBtn" class="primary-btn pay-confirm-btn">
+              ✓ ฉันโอนเงินเรียบร้อยแล้ว (ยืนยันคำสั่งซื้อ)
+            </button>
+            <button type="button" id="backToDeliveryBtn" class="secondary-btn">
+              ❮ ย้อนกลับไปแก้ไขที่อยู่จัดส่ง
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -93,10 +93,25 @@ const App = {
     if (copyPpBtn) {
       copyPpBtn.addEventListener("click", () => {
         navigator.clipboard.writeText(CONFIG.PROMPTPAY_NUMBER).then(() => {
+          copyPpBtn.textContent = "✓ คัดลอกแล้ว";
+          copyPpBtn.classList.add("copied");
+          setTimeout(() => {
+            copyPpBtn.textContent = "📋 คัดลอก";
+            copyPpBtn.classList.remove("copied");
+          }, 2000);
           showToast("คัดลอกเลขพร้อมเพย์เรียบร้อยแล้ว", "success");
         }).catch(() => {
           showToast(`เลขพร้อมเพย์: ${CONFIG.PROMPTPAY_NUMBER}`, "info");
         });
+      });
+    }
+
+    // ปุ่มย้อนกลับไปแก้ไขข้อมูลจัดส่ง
+    const backToDeliveryBtn = document.getElementById("backToDeliveryBtn");
+    if (backToDeliveryBtn) {
+      backToDeliveryBtn.addEventListener("click", () => {
+        this.closePaymentModal();
+        this.openCheckoutModal();
       });
     }
 
@@ -521,13 +536,15 @@ const App = {
     const { totalItems, totalAmount } = this.getCartTotals();
     if (checkoutSummary) {
       checkoutSummary.innerHTML = `
-        <div class="summary-row">
-          <span>จำนวนสินค้า:</span>
-          <span>${totalItems} ชิ้น</span>
-        </div>
-        <div class="summary-row total">
-          <span>ยอดชำระทั้งสิ้น:</span>
-          <span>฿${totalAmount.toLocaleString()}</span>
+        <div class="summary-details">
+          <div class="summary-row">
+            <span class="summary-label">จำนวนสินค้าที่สั่งซื้อ</span>
+            <span class="summary-value">${totalItems} ชิ้น</span>
+          </div>
+          <div class="summary-row total-row">
+            <span class="summary-label">ยอดชำระสุทธิ</span>
+            <span class="summary-value total-price">฿${totalAmount.toLocaleString()}</span>
+          </div>
         </div>
       `;
     }
