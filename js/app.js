@@ -182,7 +182,9 @@ const App = {
     }
 
     try {
-      const response = await fetch(`${CONFIG.GAS_API_URL}?action=getProducts`);
+      // เพิ่ม timestamp ป้องกัน Browser Cache ข้อมูลสินค้าเก่า
+      const cacheBuster = `&_t=${Date.now()}`;
+      const response = await fetch(`${CONFIG.GAS_API_URL}?action=getProducts${cacheBuster}`);
       const result = await response.json();
 
       if (result.status === "success" && Array.isArray(result.data) && result.data.length > 0) {
