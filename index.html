@@ -28,6 +28,10 @@
         </div>
 
         <div class="header-actions">
+          <button id="openTrackBtn" class="header-track-btn" aria-label="ติดตามสถานะพัสดุ">
+            <span class="track-icon">🔍</span>
+            <span class="track-btn-text">ติดตามพัสดุ</span>
+          </button>
           <button id="openCartBtn" class="header-cart-btn" aria-label="ดูตะกร้าสินค้า">
             🛍️
             <span id="headerCartCount" class="cart-count-badge" style="display: none;">0</span>
@@ -297,6 +301,10 @@
             </span>
           </div>
 
+          <button type="button" id="trackThisOrderBtn" class="track-order-direct-btn">
+            🔍 ติดตามสถานะออเดอร์นี้
+          </button>
+
           <button id="closeSuccessBtn" class="primary-btn">
             เสร็จสิ้น / ปิดหน้าต่าง
           </button>
@@ -305,9 +313,126 @@
     </div>
   </div>
 
+  <!-- Order Tracking Modal (ติดตามคำสั่งซื้อ & สถานะพัสดุ) -->
+  <div id="trackModal" class="modal-overlay">
+    <div class="modal-sheet modal-tracking">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <span class="step-indicator">ORDER TRACKING</span>
+          <h2>ติดตามสถานะคำสั่งซื้อ</h2>
+        </div>
+        <button type="button" id="closeTrackModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body tracking-modal-body">
+        <!-- Search Input Form -->
+        <div class="track-search-card">
+          <label for="trackQueryInput" class="track-search-label">ค้นหาด้วยเลขคำสั่งซื้อ หรือเบอร์โทรศัพท์</label>
+          <div class="track-search-input-wrap">
+            <input type="text" id="trackQueryInput" placeholder="เช่น ORD-20260920-1234 หรือ 064xxxxxxx" autocomplete="off">
+            <button type="button" id="trackSearchBtn" class="track-search-btn">
+              <span>ค้นหา</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tracking Loading State -->
+        <div id="trackLoading" class="track-state-box" style="display: none;">
+          <div class="spinner"></div>
+          <p>กำลังค้นหาข้อมูลคำสั่งซื้อ...</p>
+        </div>
+
+        <!-- Tracking Not Found / Error State -->
+        <div id="trackError" class="track-state-box error-state" style="display: none;">
+          <div class="state-icon">🔎</div>
+          <h3 id="trackErrorMsg">ไม่พบข้อมูลคำสั่งซื้อ</h3>
+          <p>กรุณาตรวจสอบหมายเลข Order ID หรือเบอร์โทรศัพท์อีกครั้งนะครับ</p>
+        </div>
+
+        <!-- Tracking Result Card -->
+        <div id="trackResult" class="track-result-wrap" style="display: none;">
+          <!-- Order ID & Payment Status Bar -->
+          <div class="track-order-top">
+            <div class="track-id-group">
+              <span class="track-id-label">คำสั่งซื้อ</span>
+              <span id="trackOrderIdDisplay" class="track-id-val">ORD-XXXX</span>
+              <span id="trackOrderTimeDisplay" class="track-time-val">2026-09-20 17:00</span>
+            </div>
+            <div id="trackPaymentBadge" class="status-tag tag-waiting">รอตรวจสอบยอด</div>
+          </div>
+
+          <!-- Stepper ไทม์ไลน์ 5 ขั้นตอน -->
+          <div class="stepper-container">
+            <div class="stepper-step" id="trackStep1">
+              <div class="stepper-circle">1</div>
+              <div class="stepper-title">สั่งซื้อแล้ว</div>
+            </div>
+            <div class="stepper-bar" id="trackBar1"></div>
+            <div class="stepper-step" id="trackStep2">
+              <div class="stepper-circle">2</div>
+              <div class="stepper-title">ชำระเงินแล้ว</div>
+            </div>
+            <div class="stepper-bar" id="trackBar2"></div>
+            <div class="stepper-step" id="trackStep3">
+              <div class="stepper-circle">3</div>
+              <div class="stepper-title">กำลังแพ็ค</div>
+            </div>
+            <div class="stepper-bar" id="trackBar3"></div>
+            <div class="stepper-step" id="trackStep4">
+              <div class="stepper-circle">4</div>
+              <div class="stepper-title">จัดส่งแล้ว</div>
+            </div>
+            <div class="stepper-bar" id="trackBar4"></div>
+            <div class="stepper-step" id="trackStep5">
+              <div class="stepper-circle">5</div>
+              <div class="stepper-title">สำเร็จ</div>
+            </div>
+          </div>
+
+          <!-- Parcel Tracking Box (แสดงเมื่อร้านใส่เลขพัสดุ) -->
+          <div id="trackingInfoBox" class="parcel-card" style="display: none;">
+            <div class="parcel-badge-header">
+              <span class="parcel-icon">🚚</span>
+              <span id="trackCarrierDisplay" class="parcel-carrier-name">Flash Express</span>
+              <span class="parcel-status-pill">จัดส่งพัสดุแล้ว</span>
+            </div>
+            <div class="parcel-number-row">
+              <div class="parcel-val-group">
+                <span class="parcel-label">หมายเลขพัสดุ (Tracking No.):</span>
+                <span id="trackParcelNumberDisplay" class="parcel-number-val">TH012345678</span>
+              </div>
+              <button type="button" id="copyParcelBtn" class="copy-parcel-btn">📋 คัดลอก</button>
+            </div>
+          </div>
+
+          <!-- Customer & Items Details Card -->
+          <div class="track-summary-card">
+            <div class="track-summary-header">รายละเอียดการสั่งซื้อ</div>
+            <div class="track-meta-row">
+              <span class="meta-label">ผู้รับ:</span>
+              <span id="trackCustomerName" class="meta-val">-</span>
+            </div>
+            <div class="track-meta-row">
+              <span class="meta-label">ที่อยู่จัดส่ง:</span>
+              <span id="trackCustomerAddress" class="meta-val">-</span>
+            </div>
+            <div class="track-meta-row">
+              <span class="meta-label">สินค้า:</span>
+              <span id="trackItemsSummary" class="meta-val highlight">-</span>
+            </div>
+            <div class="track-total-row">
+              <span>ยอดรวมทั้งหมด:</span>
+              <span id="trackTotalAmount" class="total-price">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Application Scripts -->
-  <script src="js/config.js?v=20260920-v4"></script>
-  <script src="js/liff-handler.js?v=20260920-v4"></script>
-  <script src="js/app.js?v=20260920-v4"></script>
+  <script src="js/config.js?v=20260920-v5"></script>
+  <script src="js/liff-handler.js?v=20260920-v5"></script>
+  <script src="js/app.js?v=20260920-v5"></script>
 </body>
 </html>

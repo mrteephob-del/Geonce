@@ -1278,3 +1278,406 @@ body {
 .toast-success { border-left: 4px solid var(--accent-green); }
 .toast-warning { border-left: 4px solid var(--accent-gold); }
 .toast-error { border-left: 4px solid var(--danger-color); }
+
+/* ============================================================
+   Order Tracking (ระบบติดตามคำสั่งซื้อ & พัสดุ)
+   ============================================================ */
+.header-track-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--brand-dark);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-track-btn:hover {
+  background: var(--brand-black);
+  color: #FFFFFF;
+  border-color: var(--brand-black);
+}
+
+.header-track-btn:active {
+  transform: scale(0.96);
+}
+
+.modal-tracking {
+  max-width: 520px;
+}
+
+.tracking-modal-body {
+  padding: 16px 20px 24px;
+}
+
+/* Search Box */
+.track-search-card {
+  background: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.track-search-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.track-search-input-wrap {
+  display: flex;
+  gap: 8px;
+}
+
+.track-search-input-wrap input {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  outline: none;
+  background: #FFFFFF;
+  transition: border-color 0.2s;
+}
+
+.track-search-input-wrap input:focus {
+  border-color: var(--brand-black);
+}
+
+.track-search-btn {
+  background: var(--brand-black);
+  color: #FFFFFF;
+  border: none;
+  padding: 10px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.track-search-btn:hover {
+  opacity: 0.9;
+}
+
+/* State Box (Loading / Error) */
+.track-state-box {
+  text-align: center;
+  padding: 30px 16px;
+  color: var(--text-muted);
+}
+
+.track-state-box .spinner {
+  margin: 0 auto 12px;
+  width: 32px;
+  height: 32px;
+  border: 3px solid #E2E8F0;
+  border-top-color: var(--brand-black);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.track-state-box.error-state .state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+
+.track-state-box.error-state h3 {
+  color: var(--brand-dark);
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+}
+
+.track-state-box.error-state p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Result Card */
+.track-result-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+.track-order-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.track-id-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.track-id-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.track-id-val {
+  font-family: monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--brand-dark);
+}
+
+.track-time-val {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.status-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.status-tag.tag-waiting {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.status-tag.tag-paid {
+  background: #DEF7EC;
+  color: #03543F;
+}
+
+.status-tag.tag-cancelled {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+/* Stepper ไทม์ไลน์ 5 ขั้นตอน */
+.stepper-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 4px 8px;
+}
+
+.stepper-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.stepper-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #E2E8F0;
+  color: #64748B;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.stepper-step.active .stepper-circle {
+  background: var(--brand-black);
+  color: #FFFFFF;
+  box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.15);
+}
+
+.stepper-step.completed .stepper-circle {
+  background: var(--accent-green);
+  color: #FFFFFF;
+}
+
+.stepper-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.stepper-step.active .stepper-title {
+  color: var(--brand-black);
+  font-weight: 700;
+}
+
+.stepper-bar {
+  flex: 1;
+  height: 3px;
+  background: #E2E8F0;
+  margin: 0 2px 20px;
+  transition: background 0.3s;
+}
+
+.stepper-bar.completed {
+  background: var(--accent-green);
+}
+
+/* Parcel Tracking Card */
+.parcel-card {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  color: #FFFFFF;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-md);
+}
+
+.parcel-badge-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  margin-bottom: 10px;
+}
+
+.parcel-carrier-name {
+  font-weight: 700;
+  color: #38BDF8;
+}
+
+.parcel-status-pill {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ADE80;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.parcel-number-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.parcel-val-group {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.parcel-label {
+  font-size: 0.68rem;
+  color: #94A3B8;
+  text-transform: uppercase;
+}
+
+.parcel-number-val {
+  font-family: monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.copy-parcel-btn {
+  background: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.copy-parcel-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Order Summary Details */
+.track-summary-card {
+  background: #F8FAFC;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-size: 0.85rem;
+}
+
+.track-summary-header {
+  font-weight: 700;
+  color: var(--brand-dark);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.track-meta-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.track-meta-row .meta-label {
+  color: var(--text-muted);
+  min-width: 70px;
+}
+
+.track-meta-row .meta-val {
+  color: var(--brand-dark);
+}
+
+.track-meta-row .meta-val.highlight {
+  font-weight: 600;
+}
+
+.track-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color);
+  font-weight: 700;
+}
+
+.track-total-row .total-price {
+  color: var(--accent-green);
+  font-size: 1.05rem;
+}
+
+.track-order-direct-btn {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--border-color);
+  color: var(--brand-dark);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: all 0.2s;
+}
+
+.track-order-direct-btn:hover {
+  background: var(--brand-black);
+  color: #FFFFFF;
+}

@@ -155,6 +155,62 @@ const App = {
         }
       });
     }
+
+    // ปุ่มเปิดหน้าติดตามพัสดุ / ออเดอร์
+    const openTrackBtn = document.getElementById("openTrackBtn");
+    if (openTrackBtn) {
+      openTrackBtn.addEventListener("click", () => this.openTrackModal());
+    }
+
+    // ปุ่มปิด Modal ติดตามออเดอร์
+    const closeTrackModalBtn = document.getElementById("closeTrackModalBtn");
+    if (closeTrackModalBtn) {
+      closeTrackModalBtn.addEventListener("click", () => this.closeTrackModal());
+    }
+
+    // ปุ่มค้นหาในหน้าติดตาม
+    const trackSearchBtn = document.getElementById("trackSearchBtn");
+    const trackQueryInput = document.getElementById("trackQueryInput");
+    if (trackSearchBtn) {
+      trackSearchBtn.addEventListener("click", () => {
+        const query = trackQueryInput ? trackQueryInput.value.trim() : "";
+        this.executeTrackOrder(query);
+      });
+    }
+    if (trackQueryInput) {
+      trackQueryInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.executeTrackOrder(trackQueryInput.value.trim());
+        }
+      });
+    }
+
+    // ปุ่มคัดลอกเลขพัสดุ
+    const copyParcelBtn = document.getElementById("copyParcelBtn");
+    if (copyParcelBtn) {
+      copyParcelBtn.addEventListener("click", () => {
+        const parcelNumEl = document.getElementById("trackParcelNumberDisplay");
+        if (parcelNumEl && parcelNumEl.textContent) {
+          navigator.clipboard.writeText(parcelNumEl.textContent.trim()).then(() => {
+            showToast("คัดลอกหมายเลขพัสดุแล้ว!", "success");
+          }).catch(() => {
+            showToast("คัดลอก: " + parcelNumEl.textContent.trim(), "info");
+          });
+        }
+      });
+    }
+
+    // ปุ่มติดตามออเดอร์นี้โดยตรงจากหน้า Success Modal
+    const trackThisOrderBtn = document.getElementById("trackThisOrderBtn");
+    if (trackThisOrderBtn) {
+      trackThisOrderBtn.addEventListener("click", () => {
+        const orderIdEl = document.getElementById("successOrderId");
+        const orderId = orderIdEl ? orderIdEl.textContent.trim() : "";
+        this.closeSuccessModal();
+        this.openTrackModal(orderId);
+      });
+    }
   },
 
   /**
@@ -772,6 +828,197 @@ const App = {
     }
     if (LiffHandler.isInitialized && liff.isInClient()) {
       liff.closeWindow();
+    }
+  },
+
+  /**
+   * เปิด Modal ติดตามสถานะคำสั่งซื้อ
+   */
+  openTrackModal(initialQuery = "") {
+    const trackModal = document.getElementById("trackModal");
+    const trackQueryInput = document.getElementById("trackQueryInput");
+    const trackResult = document.getElementById("trackResult");
+    const trackError = document.getElementById("trackError");
+    const trackLoading = document.getElementById("trackLoading");
+
+    if (trackResult) trackResult.style.display = "none";
+    if (trackError) trackError.style.display = "none";
+    if (trackLoading) trackLoading.style.display = "none";
+
+    if (trackQueryInput) {
+      trackQueryInput.value = initialQuery;
+    }
+
+    if (trackModal) {
+      trackModal.classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+
+    if (initialQuery) {
+      this.executeTrackOrder(initialQuery);
+    }
+  },
+
+  /**
+   * ปิด Modal ติดตามสถานะคำสั่งซื้อ
+   */
+  closeTrackModal() {
+    const trackModal = document.getElementById("trackModal");
+    if (trackModal) {
+      trackModal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+  },
+
+  /**
+   * ค้นหาและแสดงผลสถานะคำสั่งซื้อ
+   */
+  async executeTrackOrder(query) {
+    if (!query) {
+      showToast("กรุณาระบุเลขคำสั่งซื้อ หรือเบอร์โทรศัพท์", "warning");
+      return;
+    }
+
+    const trackLoading = document.getElementById("trackLoading");
+    const trackResult = document.getElementById("trackResult");
+    const trackError = document.getElementById("trackError");
+    const trackErrorMsg = document.getElementById("trackErrorMsg");
+
+    if (trackLoading) trackLoading.style.display = "block";
+    if (trackResult) trackResult.style.display = "none";
+    if (trackError) trackError.style.display = "none";
+
+    try {
+      const cacheBuster = `&_t=${Date.now()}`;
+      const url = `${CONFIG.GAS_API_URL}?action=trackOrder&query=${encodeURIComponent(query)}${cacheBuster}`;
+      const response = await fetch(url);
+      const result = await response.json();
+
+      if (trackLoading) trackLoading.style.display = "none";
+
+      if (result.status === "success" && result.data) {
+        this.renderTrackingResult(result.data);
+      } else {
+        if (trackError) trackError.style.display = "block";
+        if (trackErrorMsg) trackErrorMsg.textContent = result.message || "ไม่พบข้อมูลคำสั่งซื้อ";
+      }
+    } catch (err) {
+      console.error("Tracking fetch error:", err);
+      if (trackLoading) trackLoading.style.display = "none";
+      if (trackError) trackError.style.display = "block";
+      if (trackErrorMsg) trackErrorMsg.textContent = "ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง";
+    }
+  },
+
+  /**
+   * แสดงผลรายละเอียดและไทม์ไลน์สถานะพัสดุ
+   */
+  renderTrackingResult(order) {
+    const trackResult = document.getElementById("trackResult");
+    const trackOrderIdDisplay = document.getElementById("trackOrderIdDisplay");
+    const trackOrderTimeDisplay = document.getElementById("trackOrderTimeDisplay");
+    const trackPaymentBadge = document.getElementById("trackPaymentBadge");
+    const trackingInfoBox = document.getElementById("trackingInfoBox");
+    const trackCarrierDisplay = document.getElementById("trackCarrierDisplay");
+    const trackParcelNumberDisplay = document.getElementById("trackParcelNumberDisplay");
+    const trackCustomerName = document.getElementById("trackCustomerName");
+    const trackCustomerAddress = document.getElementById("trackCustomerAddress");
+    const trackItemsSummary = document.getElementById("trackItemsSummary");
+    const trackTotalAmount = document.getElementById("trackTotalAmount");
+
+    if (trackOrderIdDisplay) trackOrderIdDisplay.textContent = order.order_id || "-";
+    if (trackOrderTimeDisplay) trackOrderTimeDisplay.textContent = order.timestamp || "-";
+    if (trackCustomerName) trackCustomerName.textContent = order.customer_name || "-";
+    if (trackCustomerAddress) trackCustomerAddress.textContent = order.address || "-";
+    if (trackItemsSummary) trackItemsSummary.textContent = order.items_summary || "-";
+    if (trackTotalAmount) trackTotalAmount.textContent = `${CONFIG.CURRENCY_SYMBOL}${Number(order.total_amount || 0).toLocaleString()}`;
+
+    // ป้ายสถานะชำระเงิน
+    if (trackPaymentBadge) {
+      if (order.payment_status === "PAID") {
+        trackPaymentBadge.className = "status-tag tag-paid";
+        trackPaymentBadge.textContent = "ชำระเงินแล้ว";
+      } else if (order.payment_status === "CANCELLED") {
+        trackPaymentBadge.className = "status-tag tag-cancelled";
+        trackPaymentBadge.textContent = "ยกเลิกคำสั่งซื้อ";
+      } else {
+        trackPaymentBadge.className = "status-tag tag-waiting";
+        trackPaymentBadge.textContent = "รอตรวจสอบยอดชำระ";
+      }
+    }
+
+    // กล่องหมายเลขพัสดุ
+    if (trackingInfoBox) {
+      if (order.tracking_number && order.tracking_number.trim() !== "") {
+        trackingInfoBox.style.display = "block";
+        if (trackCarrierDisplay) trackCarrierDisplay.textContent = order.shipping_carrier || "พัสดุด่วน";
+        if (trackParcelNumberDisplay) trackParcelNumberDisplay.textContent = order.tracking_number;
+      } else {
+        trackingInfoBox.style.display = "none";
+      }
+    }
+
+    // คำนวณความคืบหน้าของ Stepper ไทม์ไลน์ 5 ขั้นตอน
+    this.updateTrackingStepper(order);
+
+    if (trackResult) {
+      trackResult.style.display = "flex";
+    }
+  },
+
+  /**
+   * คำนวณความคืบหน้าของ Stepper ไทม์ไลน์
+   */
+  updateTrackingStepper(order) {
+    const s1 = document.getElementById("trackStep1");
+    const s2 = document.getElementById("trackStep2");
+    const s3 = document.getElementById("trackStep3");
+    const s4 = document.getElementById("trackStep4");
+    const s5 = document.getElementById("trackStep5");
+    const b1 = document.getElementById("trackBar1");
+    const b2 = document.getElementById("trackBar2");
+    const b3 = document.getElementById("trackBar3");
+    const b4 = document.getElementById("trackBar4");
+
+    const steps = [s1, s2, s3, s4, s5];
+    const bars = [b1, b2, b3, b4];
+
+    steps.forEach(s => { if (s) s.className = "stepper-step"; });
+    bars.forEach(b => { if (b) b.className = "stepper-bar"; });
+
+    const status = String(order.status || "").toUpperCase();
+    const payment = String(order.payment_status || "").toUpperCase();
+    const hasTracking = order.tracking_number && order.tracking_number.trim() !== "";
+
+    let currentStepIndex = 1;
+
+    if (status === "DELIVERED") {
+      currentStepIndex = 5;
+    } else if (status === "SHIPPED" || hasTracking) {
+      currentStepIndex = 4;
+    } else if (status === "PROCESSING" || status === "PACKING") {
+      currentStepIndex = 3;
+    } else if (payment === "PAID" || status === "CONFIRMED") {
+      currentStepIndex = 2;
+    } else {
+      currentStepIndex = 1;
+    }
+
+    for (let i = 0; i < steps.length; i++) {
+      if (!steps[i]) continue;
+      const stepNumber = i + 1;
+      if (stepNumber < currentStepIndex) {
+        steps[i].classList.add("completed");
+      } else if (stepNumber === currentStepIndex) {
+        steps[i].classList.add("active");
+      }
+    }
+
+    for (let j = 0; j < bars.length; j++) {
+      if (!bars[j]) continue;
+      if (j + 1 < currentStepIndex) {
+        bars[j].classList.add("completed");
+      }
     }
   }
 };
