@@ -4,7 +4,7 @@
  */
 const CONFIG = {
   // 1. นำ LIFF ID ที่ได้จาก LINE Developers Console มาใส่ที่นี่ (รูปแบบ: 200xxxxxxx-xxxxxxx)
-  LIFF_ID: "YOUR_LIFF_ID",
+  LIFF_ID: "2011677186-GcaBdWtu",
 
   // 2. นำ Web App URL ที่ได้จากการกด Deploy ใน Apps Script มาใส่ที่นี่ (ต้องลงท้ายด้วย /exec)
   GAS_API_URL: "https://script.google.com/macros/s/AKfycbzlFLfbHwSIBtBAjyi15BAp_OfVnNHLO18e-yrAH_ahNE6j5I5KR9ZJRIXl3fn9quISHw/exec",
