@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Geonce Cafe & Store - ระบบสั่งซื้อผ่าน LINE LIFF</title>
+  
+  <!-- Google Fonts: Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- LINE LIFF SDK v2 -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Header Section -->
+    <header class="app-header">
+      <div class="header-top">
+        <div class="user-profile">
+          <div class="avatar-wrapper">
+            <img id="userAvatar" src="https://placehold.co/100?text=LINE" alt="User Profile" class="user-avatar">
+          </div>
+          <div class="user-info">
+            <span id="userName" class="user-name">กำลังโหลด...</span>
+            <div id="liffStatusBadge" class="status-badge">
+              <span class="badge-dot green"></span> กำลังเชื่อมต่อ LINE
+            </div>
+          </div>
+        </div>
+
+        <button id="openCartBtn" class="header-cart-btn" aria-label="ดูตะกร้าสินค้า">
+          🛒
+          <span id="headerCartCount" class="cart-count-badge" style="display: none;">0</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Search Section -->
+    <section class="search-container">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="ค้นหาเมนูเครื่องดื่ม เบเกอรี่...">
+      </div>
+    </section>
+
+    <!-- Category Filter Tabs -->
+    <section class="category-container">
+      <div id="categoryTabs" class="category-tabs">
+        <button class="cat-pill active" data-category="All">ทั้งหมด</button>
+      </div>
+    </section>
+
+    <!-- Product Catalog Grid -->
+    <main class="catalog-section">
+      <div class="section-header">
+        <h1 class="section-title">เมนูแนะนำ</h1>
+      </div>
+      <div id="productGrid" class="product-grid">
+        <!-- เรนเดอร์การ์ดสินค้าโดย JavaScript -->
+      </div>
+    </main>
+
+    <!-- Sticky Floating Bottom Cart Bar -->
+    <div id="floatingCartBar" class="floating-cart-bar">
+      <div class="floating-cart-left">
+        <span class="floating-cart-icon">🛍️</span>
+        <div>
+          <div id="floatingCartCount" class="floating-cart-count">0 รายการ</div>
+          <div id="floatingCartTotal" class="floating-cart-total">฿0</div>
+        </div>
+      </div>
+      <div class="floating-cart-action">
+        ดูตะกร้า ❯
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Modal (Bottom Sheet) -->
+  <div id="cartModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2>ตะกร้าสินค้าของคุณ</h2>
+        <button id="closeCartBtn" class="modal-close-btn" aria-label="ปิด">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="cartItemsList" class="cart-items-list">
+          <!-- รายการสินค้าในตะกร้า -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="cart-total-summary">
+          <span class="cart-total-label">ยอดรวมชำระ:</span>
+          <span id="cartTotalPrice" class="cart-total-value">฿0</span>
+        </div>
+        <button id="proceedCheckoutBtn" class="primary-btn" disabled>
+          ดำเนินการสั่งซื้อ ❯
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div id="checkoutModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2>ข้อมูลการจัดส่งและสั่งซื้อ</h2>
+        <button id="closeCheckoutBtn" class="modal-close-btn" aria-label="ปิด">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="checkoutForm">
+          <div class="form-summary-card" id="checkoutSummary">
+            <!-- สรุปยอดเงิน -->
+          </div>
+
+          <div class="form-group">
+            <label for="customerNameInput">ชื่อผู้สั่งซื้อ *</label>
+            <input type="text" id="customerNameInput" required placeholder="ชื่อ-นามสกุล">
+          </div>
+
+          <div class="form-group">
+            <label for="phoneInput">เบอร์โทรศัพท์ติดต่อ *</label>
+            <input type="tel" id="phoneInput" required placeholder="08xxxxxxxx" pattern="[0-9]{9,10}">
+          </div>
+
+          <div class="form-group">
+            <label for="addressInput">ที่อยู่จัดส่ง / สาขาที่รับสินค้า</label>
+            <textarea id="addressInput" rows="2" placeholder="ระบุบ้านเลขที่ ซอย ถนน แขวง/ตำบล เขต/อำเภอ"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="noteInput">หมายเหตุเพิ่มเติม</label>
+            <input type="text" id="noteInput" placeholder="เช่น หวานน้อย, แยกน้ำแข็ง">
+          </div>
+
+          <button type="submit" id="submitOrderBtn" class="primary-btn" style="margin-top: 10px;">
+            ยืนยันการสั่งซื้อ
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success / Order Confirmation Modal -->
+  <div id="successModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-body">
+        <div class="success-content">
+          <div class="success-icon-wrap">🎉</div>
+          <h2 class="success-title">สั่งซื้อสินค้าเรียบร้อย!</h2>
+          <p style="color: var(--secondary-color); font-size: 0.9rem;">ระบบได้บันทึกคำสั่งซื้อของคุณเข้าสู่ระบบแล้ว</p>
+          
+          <div class="success-order-box">
+            <div class="order-badge-label">เลขที่คำสั่งซื้อ</div>
+            <div id="successOrderId" class="order-id-highlight">-</div>
+            <div style="font-size: 0.9rem; margin-top: 4px;">
+              ยอดรวม: <b id="successTotal" style="color: var(--line-green);">-</b>
+            </div>
+          </div>
+
+          <div class="success-line-notice">
+            <span>💬</span>
+            <span>ส่งใบเสร็จสรุปออเดอร์เข้าห้องแชท LINE แล้ว</span>
+          </div>
+
+          <button id="closeSuccessBtn" class="primary-btn">
+            เสร็จสิ้น / ปิดหน้าต่าง
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/liff-handler.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
