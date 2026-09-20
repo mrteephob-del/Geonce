@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20260920-v6">
   
   <!-- LINE LIFF SDK v2 -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -88,6 +88,81 @@
       </div>
       <div class="floating-cart-action">
         ดูตะกร้า ❯
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Detail Bottom Sheet / Modal (หน้ารายละเอียดสินค้า + แกลเลอรีหลายรูปภาพ) -->
+  <div id="productDetailModal" class="modal-overlay">
+    <div class="modal-sheet modal-product-detail">
+      <div class="sheet-drag-handle"></div>
+      
+      <div class="modal-header detail-header">
+        <span id="detailCategoryBadge" class="product-category-tag">Apparel</span>
+        <button type="button" id="closeDetailBtn" class="modal-close-btn" aria-label="ปิด">✕</button>
+      </div>
+
+      <div class="modal-body detail-modal-body">
+        <!-- แกลเลอรีรูปภาพสินค้า -->
+        <div class="detail-gallery-container">
+          <div class="detail-main-image-wrap">
+            <img id="detailMainImg" src="" alt="Product Detail" class="detail-main-img">
+            <span id="detailStockBadge" class="detail-stock-badge">พร้อมส่ง</span>
+            <span id="detailImgCounter" class="detail-img-counter" style="display: none;">1 / 1</span>
+          </div>
+          <!-- แถบรูปขนาดย่อ (Thumbnails) -->
+          <div id="detailThumbnailsRow" class="detail-thumbnails-row" style="display: none;">
+            <!-- เรนเดอร์ด้วย JavaScript เมื่อมีหลายรูป -->
+          </div>
+        </div>
+
+        <!-- ข้อมูลสินค้า -->
+        <div class="detail-info-section">
+          <h2 id="detailTitle" class="detail-product-title">-</h2>
+          <div class="detail-price-row">
+            <span class="detail-currency">฿</span>
+            <span id="detailPrice" class="detail-price-val">0</span>
+          </div>
+
+          <div class="detail-desc-box">
+            <div class="detail-desc-label">รายละเอียดสินค้า</div>
+            <p id="detailDesc" class="detail-desc-text">-</p>
+          </div>
+
+          <!-- ตัวเลือกไซส์ -->
+          <div class="detail-option-group">
+            <div class="option-header">
+              <span class="option-label">เลือกไซส์ (SIZE)</span>
+              <span id="detailSelectedSizeText" class="option-selected-val">M</span>
+            </div>
+            <div id="detailSizeGroup" class="size-pill-group">
+              <button type="button" class="size-pill" data-size="S">S</button>
+              <button type="button" class="size-pill active" data-size="M">M</button>
+              <button type="button" class="size-pill" data-size="L">L</button>
+              <button type="button" class="size-pill" data-size="XL">XL</button>
+            </div>
+          </div>
+
+          <!-- ตัวเลือกจำนวน -->
+          <div class="detail-option-group">
+            <div class="option-header">
+              <span class="option-label">จำนวน (QUANTITY)</span>
+            </div>
+            <div class="qty-stepper-wrap">
+              <button type="button" id="detailQtyMinus" class="qty-stepper-btn" aria-label="ลดจำนวน">−</button>
+              <span id="detailQtyVal" class="qty-stepper-val">1</span>
+              <button type="button" id="detailQtyPlus" class="qty-stepper-btn" aria-label="เพิ่มจำนวน">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="modal-footer detail-modal-footer">
+        <button type="button" id="detailAddToCartBtn" class="primary-btn detail-add-btn">
+          <span>เพิ่มลงตะกร้า 🛍️</span>
+          <span id="detailAddBtnPrice" class="detail-btn-price">฿0</span>
+        </button>
       </div>
     </div>
   </div>
@@ -431,8 +506,8 @@
   </div>
 
   <!-- Application Scripts -->
-  <script src="js/config.js?v=20260920-v5"></script>
-  <script src="js/liff-handler.js?v=20260920-v5"></script>
-  <script src="js/app.js?v=20260920-v5"></script>
+  <script src="js/config.js?v=20260920-v6"></script>
+  <script src="js/liff-handler.js?v=20260920-v6"></script>
+  <script src="js/app.js?v=20260920-v6"></script>
 </body>
 </html>

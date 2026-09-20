@@ -13,6 +13,13 @@ const App = {
   // เก็บสินค้าชั่วคราวขณะเปิด Size Modal
   currentSelectingProduct: null,
   selectedSize: "M",
+
+  // รายละเอียดสินค้า & แกลเลอรีรูปภาพ (Product Detail Bottom Sheet)
+  detailCurrentProduct: null,
+  detailSelectedSize: "M",
+  detailQuantity: 1,
+  detailImages: [],
+  detailActiveImageIndex: 0,
   
   // เก็บข้อมูลฟอร์มจัดส่งชั่วคราวระหว่างไปหน้าชำระเงิน
   pendingCheckoutData: null,
@@ -152,6 +159,78 @@ const App = {
         if (this.currentSelectingProduct) {
           this.executeAddToCart(this.currentSelectingProduct, this.selectedSize);
           this.closeSizeModal();
+        }
+      });
+    }
+
+    // ==========================================
+    // Event Listeners: หน้ารายละเอียดสินค้า (Product Detail Modal)
+    // ==========================================
+    const closeDetailBtn = document.getElementById("closeDetailBtn");
+    if (closeDetailBtn) {
+      closeDetailBtn.addEventListener("click", () => this.closeProductDetail());
+    }
+
+    const productDetailModal = document.getElementById("productDetailModal");
+    if (productDetailModal) {
+      productDetailModal.addEventListener("click", (e) => {
+        if (e.target === productDetailModal) {
+          this.closeProductDetail();
+        }
+      });
+      const sheetHandle = productDetailModal.querySelector(".sheet-drag-handle");
+      if (sheetHandle) {
+        sheetHandle.addEventListener("click", () => this.closeProductDetail());
+      }
+    }
+
+    // เลือกไซส์ในหน้ารายละเอียดสินค้า
+    const detailSizeGroup = document.getElementById("detailSizeGroup");
+    if (detailSizeGroup) {
+      detailSizeGroup.querySelectorAll(".size-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+          detailSizeGroup.querySelectorAll(".size-pill").forEach(p => p.classList.remove("active"));
+          pill.classList.add("active");
+          this.detailSelectedSize = pill.getAttribute("data-size");
+          const selectedText = document.getElementById("detailSelectedSizeText");
+          if (selectedText) selectedText.textContent = this.detailSelectedSize;
+        });
+      });
+    }
+
+    // ปรับเพิ่ม/ลดจำนวนสินค้า (+ / -)
+    const detailQtyMinus = document.getElementById("detailQtyMinus");
+    if (detailQtyMinus) {
+      detailQtyMinus.addEventListener("click", () => {
+        if (this.detailQuantity > 1) {
+          this.detailQuantity -= 1;
+          this.updateDetailQuantityUI();
+        }
+      });
+    }
+
+    const detailQtyPlus = document.getElementById("detailQtyPlus");
+    if (detailQtyPlus) {
+      detailQtyPlus.addEventListener("click", () => {
+        const maxStock = this.detailCurrentProduct ? (Number(this.detailCurrentProduct.stock) || 999) : 999;
+        if (this.detailQuantity < maxStock) {
+          this.detailQuantity += 1;
+          this.updateDetailQuantityUI();
+        } else {
+          showToast(`ขออภัย สามารถเลือกได้สูงสุด ${maxStock} ชิ้นตามสต็อกที่มี`, "warning");
+        }
+      });
+    }
+
+    // ปุ่มเพิ่มลงตะกร้าจากหน้ารายละเอียดสินค้า
+    const detailAddToCartBtn = document.getElementById("detailAddToCartBtn");
+    if (detailAddToCartBtn) {
+      detailAddToCartBtn.addEventListener("click", () => {
+        if (this.detailCurrentProduct) {
+          const success = this.executeAddToCart(this.detailCurrentProduct, this.detailSelectedSize, this.detailQuantity);
+          if (success !== false) {
+            this.closeProductDetail();
+          }
         }
       });
     }
@@ -337,16 +416,19 @@ const App = {
 
     productGrid.innerHTML = filtered.map(item => {
       const isOutOfStock = Number(item.stock) <= 0 || item.status === "OUT_OF_STOCK";
+      const images = this.parseProductImages(item);
+      const mainCardImg = images.length > 0 ? images[0] : (item.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&auto=format&fit=crop&q=80');
 
       return `
-        <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}">
+        <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}" data-id="${item.id}">
           <div class="product-image-wrap">
-            <img src="${item.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&auto=format&fit=crop&q=80'}" 
+            <img src="${mainCardImg}" 
                  alt="${item.name}" 
                  class="product-image"
                  loading="lazy"
                  onerror="this.src='https://placehold.co/400x400?text=GEONCE'">
             <span class="product-category-tag">${item.category || 'Apparel'}</span>
+            ${images.length > 1 ? `<span class="gallery-multi-badge" style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.72rem; padding: 2px 7px; border-radius: 6px; font-weight: 600; backdrop-filter: blur(4px);">📸 ${images.length} รูป</span>` : ''}
             ${isOutOfStock ? '<div class="out-of-stock-badge">สินค้าหมด</div>' : ''}
           </div>
           <div class="product-body">
@@ -360,7 +442,7 @@ const App = {
               <button class="add-to-cart-btn" 
                       data-id="${item.id}" 
                       ${isOutOfStock ? 'disabled' : ''}>
-                + เลือกไซส์
+                + ดูรายละเอียด
               </button>
             </div>
           </div>
@@ -368,11 +450,20 @@ const App = {
       `;
     }).join("");
 
+    // คลิกการ์ดสินค้าเพื่อเปิดหน้ารายละเอียดสินค้า
+    productGrid.querySelectorAll(".product-card").forEach(card => {
+      card.addEventListener("click", () => {
+        const id = card.getAttribute("data-id");
+        this.openProductDetail(id);
+      });
+    });
+
+    // ปุ่มดูรายละเอียด / เลือกไซส์บนการ์ด
     productGrid.querySelectorAll(".add-to-cart-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         const id = btn.getAttribute("data-id");
-        this.openSizeModal(id);
+        this.openProductDetail(id);
       });
     });
   },
@@ -421,22 +512,25 @@ const App = {
   },
 
   /**
-   * เพิ่มสินค้าพร้อมขนาดลงตะกร้า
+   * เพิ่มสินค้าพร้อมขนาดและจำนวนลงตะกร้า
    */
-  executeAddToCart(product, size) {
+  executeAddToCart(product, size, quantity = 1) {
+    const qtyToAdd = Math.max(1, parseInt(quantity, 10) || 1);
     const cartItemId = `${product.id}_${size}`;
     const existingIndex = this.cart.findIndex(c => c.cartItemId === cartItemId);
+    const images = this.parseProductImages(product);
+    const primaryImg = images.length > 0 ? images[0] : (product.image_url || 'https://placehold.co/400x400?text=GEONCE');
 
     if (existingIndex > -1) {
-      if (this.cart[existingIndex].quantity + 1 > product.stock) {
-        showToast("ขออภัย สินค้าในสต็อกมีไม่เพียงพอ", "warning");
-        return;
+      if (this.cart[existingIndex].quantity + qtyToAdd > product.stock) {
+        showToast(`ขออภัย สินค้าในสต็อกมีไม่เพียงพอ (คงเหลือ ${product.stock} ชิ้น)`, "warning");
+        return false;
       }
-      this.cart[existingIndex].quantity += 1;
+      this.cart[existingIndex].quantity += qtyToAdd;
     } else {
-      if (product.stock < 1) {
-        showToast("ขออภัย สินค้านี้หมดแล้ว", "warning");
-        return;
+      if (product.stock < qtyToAdd) {
+        showToast(`ขออภัย สินค้าในสต็อกมีไม่เพียงพอ (คงเหลือ ${product.stock} ชิ้น)`, "warning");
+        return false;
       }
       this.cart.push({
         cartItemId: cartItemId,
@@ -444,14 +538,202 @@ const App = {
         name: product.name,
         size: size,
         price: Number(product.price),
-        image_url: product.image_url,
-        quantity: 1,
+        image_url: primaryImg,
+        quantity: qtyToAdd,
         stock: product.stock
       });
     }
 
-    showToast(`เพิ่ม "${product.name} [Size ${size}]" ลงตะกร้าแล้ว`, "success");
+    showToast(`เพิ่ม "${product.name} [Size ${size}]" จำนวน ${qtyToAdd} ชิ้น ลงตะกร้าแล้ว`, "success");
     this.updateCartBadge();
+    return true;
+  },
+
+  /**
+   * แปลง URL รูปภาพสินค้าให้รองรับทั้งแบบรูปเดี่ยว และหลายรูปภาพ
+   * รองรับทั้ง Array จาก gas/Code.gs (product.images) และข้อความที่คั่นด้วย comma หรือ newline
+   */
+  parseProductImages(product) {
+    if (!product) return [];
+
+    // หากมี images array จาก backend แล้ว
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      return product.images.filter(url => url && typeof url === "string" && url.trim() !== "");
+    }
+
+    // หากเก็บเป็นสตริงใน image_url
+    if (typeof product.image_url === "string" && product.image_url.trim()) {
+      return product.image_url
+        .split(/[\n,]+/)
+        .map(url => url.trim())
+        .filter(url => url && (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:image")));
+    }
+
+    return [];
+  },
+
+  /**
+   * เปิดหน้ารายละเอียดสินค้า (Product Detail Bottom Sheet) พร้อมแกลเลอรีรูปภาพ
+   */
+  openProductDetail(productIdOrProduct) {
+    const product = typeof productIdOrProduct === "object" 
+      ? productIdOrProduct 
+      : this.products.find(p => p.id === productIdOrProduct);
+
+    if (!product) return;
+
+    this.detailCurrentProduct = product;
+    this.detailSelectedSize = "M";
+    this.detailQuantity = 1;
+    this.detailImages = this.parseProductImages(product);
+    this.detailActiveImageIndex = 0;
+
+    const modal = document.getElementById("productDetailModal");
+    const categoryBadge = document.getElementById("detailCategoryBadge");
+    const stockBadge = document.getElementById("detailStockBadge");
+    const titleEl = document.getElementById("detailTitle");
+    const priceEl = document.getElementById("detailPrice");
+    const descEl = document.getElementById("detailDesc");
+    const selectedSizeText = document.getElementById("detailSelectedSizeText");
+    const sizeGroup = document.getElementById("detailSizeGroup");
+    const addToCartBtn = document.getElementById("detailAddToCartBtn");
+    const thumbnailsRow = document.getElementById("detailThumbnailsRow");
+
+    if (categoryBadge) categoryBadge.textContent = product.category || "Apparel";
+    if (titleEl) titleEl.textContent = product.name || "-";
+    if (priceEl) priceEl.textContent = Number(product.price || 0).toLocaleString();
+    if (descEl) {
+      descEl.textContent = product.description || "สินค้าลิขสิทธิ์แท้จาก GEONCE ผลิตจากผ้าคุณภาพพรีเมียม สวมใส่สบาย ดีไซน์โมเดิร์นสตรีทแวร์";
+    }
+
+    // ตรวจสอบและแสดงสถานะสต็อก
+    const isOutOfStock = Number(product.stock) <= 0 || product.status === "OUT_OF_STOCK";
+    if (stockBadge) {
+      if (isOutOfStock) {
+        stockBadge.textContent = "สินค้าหมด";
+        stockBadge.className = "detail-stock-badge out-of-stock";
+      } else {
+        stockBadge.textContent = `พร้อมส่ง (เหลือ ${product.stock} ชิ้น)`;
+        stockBadge.className = "detail-stock-badge in-stock";
+      }
+    }
+
+    if (addToCartBtn) {
+      addToCartBtn.disabled = isOutOfStock;
+    }
+
+    // เซ็ตขนาดเริ่มต้น
+    if (selectedSizeText) selectedSizeText.textContent = this.detailSelectedSize;
+    if (sizeGroup) {
+      sizeGroup.querySelectorAll(".size-pill").forEach(p => {
+        p.classList.toggle("active", p.getAttribute("data-size") === this.detailSelectedSize);
+      });
+    }
+
+    // เซ็ตจำนวนเริ่มต้นและอัปเดตราคา
+    this.updateDetailQuantityUI();
+
+    // รูปภาพและแกลเลอรี
+    const fallbackImage = "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80";
+    if (this.detailImages.length === 0) {
+      this.detailImages = [product.image_url || fallbackImage];
+    }
+
+    // แสดงรูปแรก
+    this.switchDetailGalleryImage(0);
+
+    // เรนเดอร์ Thumbnails ด้านล่างรูปหลักหากมีหลายรูป
+    if (thumbnailsRow) {
+      if (this.detailImages.length > 1) {
+        thumbnailsRow.style.display = "flex";
+        thumbnailsRow.innerHTML = this.detailImages.map((imgUrl, idx) => `
+          <button type="button" class="detail-thumb-item ${idx === 0 ? 'active' : ''}" data-index="${idx}" aria-label="ดูรูปที่ ${idx + 1}">
+            <img src="${imgUrl}" alt="Thumbnail ${idx + 1}" onerror="this.src='https://placehold.co/100?text=GEONCE'">
+          </button>
+        `).join("");
+
+        thumbnailsRow.querySelectorAll(".detail-thumb-item").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const idx = parseInt(btn.getAttribute("data-index"), 10);
+            this.switchDetailGalleryImage(idx);
+          });
+        });
+      } else {
+        thumbnailsRow.style.display = "none";
+        thumbnailsRow.innerHTML = "";
+      }
+    }
+
+    if (modal) {
+      modal.classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+  },
+
+  /**
+   * สลับรูปภาพหลักในแกลเลอรี
+   */
+  switchDetailGalleryImage(index) {
+    if (!this.detailImages || this.detailImages.length === 0) return;
+    if (index < 0 || index >= this.detailImages.length) return;
+
+    this.detailActiveImageIndex = index;
+    const mainImg = document.getElementById("detailMainImg");
+    const imgCounter = document.getElementById("detailImgCounter");
+    const thumbnailsRow = document.getElementById("detailThumbnailsRow");
+
+    if (mainImg) {
+      mainImg.src = this.detailImages[index];
+    }
+
+    if (imgCounter) {
+      if (this.detailImages.length > 1) {
+        imgCounter.style.display = "inline-block";
+        imgCounter.textContent = `${index + 1} / ${this.detailImages.length}`;
+      } else {
+        imgCounter.style.display = "none";
+      }
+    }
+
+    if (thumbnailsRow) {
+      thumbnailsRow.querySelectorAll(".detail-thumb-item").forEach((thumb, idx) => {
+        thumb.classList.toggle("active", idx === index);
+      });
+    }
+  },
+
+  /**
+   * ปิดหน้ารายละเอียดสินค้า
+   */
+  closeProductDetail() {
+    const modal = document.getElementById("productDetailModal");
+    if (modal) {
+      modal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+    this.detailCurrentProduct = null;
+  },
+
+  /**
+   * อัปเดต UI จำนวนสินค้าและราคารวมในปุ่ม
+   */
+  updateDetailQuantityUI() {
+    const qtyValEl = document.getElementById("detailQtyVal");
+    const addBtnPrice = document.getElementById("detailAddBtnPrice");
+    const minusBtn = document.getElementById("detailQtyMinus");
+    const plusBtn = document.getElementById("detailQtyPlus");
+
+    if (qtyValEl) qtyValEl.textContent = this.detailQuantity;
+
+    if (this.detailCurrentProduct) {
+      const unitPrice = Number(this.detailCurrentProduct.price) || 0;
+      const total = unitPrice * this.detailQuantity;
+      if (addBtnPrice) addBtnPrice.textContent = `฿${total.toLocaleString()}`;
+
+      const maxStock = Number(this.detailCurrentProduct.stock) || 0;
+      if (minusBtn) minusBtn.disabled = this.detailQuantity <= 1;
+      if (plusBtn) plusBtn.disabled = maxStock > 0 && this.detailQuantity >= maxStock;
+    }
   },
 
   /**

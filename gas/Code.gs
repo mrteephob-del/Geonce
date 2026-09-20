@@ -351,13 +351,19 @@ function fetchProducts() {
     }
 
     if (String(item.status).toUpperCase() === "ACTIVE") {
+      // รองรับหลายรูปภาพ คั่นด้วยเครื่องหมายจุลภาค , หรือขึ้นบรรทัดใหม่
+      const rawImages = String(item.image_url || "").trim();
+      const imagesList = rawImages.split(/[\n,]+/).map(function(s) { return s.trim(); }).filter(Boolean);
+      const primaryImage = imagesList[0] || "";
+
       products.push({
         id: String(item.id),
         name: String(item.name),
         category: String(item.category || "General"),
         price: Number(item.price) || 0,
         description: String(item.description || ""),
-        image_url: String(item.image_url || ""),
+        image_url: primaryImage,
+        images: imagesList.length > 0 ? imagesList : (primaryImage ? [primaryImage] : []),
         stock: Number(item.stock) || 0,
         status: String(item.status)
       });
