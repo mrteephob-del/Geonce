@@ -7,7 +7,7 @@ const CONFIG = {
   LIFF_ID: "YOUR_LIFF_ID",
 
   // 2. นำ Web App URL ที่ได้จากการกด Deploy ใน Apps Script มาใส่ที่นี่ (ต้องลงท้ายด้วย /exec)
-  GAS_API_URL: "https://script.google.com/macros/s/AKfycbyQesQYj6FUG45kIVB6Lsv4ie7gEiQ1XGZSlWZhh_d5PDqLDSZU4Lwo80-pFtXqOQuiWA/exec",
+  GAS_API_URL: "https://script.google.com/macros/s/AKfycbzlFLfbHwSIBtBAjyi15BAp_OfVnNHLO18e-yrAH_ahNE6j5I5KR9ZJRIXl3fn9quISHw/exec",
 
   // ข้อมูลร้านค้าแบรนด์เสื้อผ้า GEONCE
   SHOP_NAME: "GEONCE",
