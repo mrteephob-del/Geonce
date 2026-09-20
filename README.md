@@ -115,7 +115,7 @@ const CONFIG = {
   CURRENCY_SYMBOL: "฿",
 
   // 3. กำหนดเบอร์โทรศัพท์ (10 หลัก) หรือเลขบัตร ปชช./นิติบุคคล (13 หลัก) สำหรับสร้าง PromptPay QR
-  PROMPTPAY_NUMBER: "0812345678",
+  PROMPTPAY_NUMBER: "0644890672",
   PROMPTPAY_NAME: "GEONCE OFFICIAL STORE",
   BANK_NAME: "พร้อมเพย์ (PromptPay)",
 
