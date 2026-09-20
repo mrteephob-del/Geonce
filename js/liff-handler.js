@@ -106,40 +106,44 @@ const LiffHandler = {
    */
   createReceiptFlexMessage(orderData) {
     // สร้างแถวรายการสินค้าในใบเสร็จ
-    const itemRows = orderData.items.map(item => ({
-      type: "box",
-      layout: "horizontal",
-      contents: [
-        {
-          type: "text",
-          text: `${item.name} x${item.quantity}`,
-          size: "sm",
-          color: "#555555",
-          flex: 4,
-          wrap: true
-        },
-        {
-          type: "text",
-          text: `฿${(item.price * item.quantity).toLocaleString()}`,
-          size: "sm",
-          color: "#111111",
-          align: "end",
-          flex: 2
-        }
-      ],
-      margin: "md"
-    }));
+    const itemRows = orderData.items.map(item => {
+      const sizeText = item.size ? ` [${item.size}]` : "";
+      return {
+        type: "box",
+        layout: "horizontal",
+        contents: [
+          {
+            type: "text",
+            text: `${item.name}${sizeText} x${item.quantity}`,
+            size: "sm",
+            color: "#334155",
+            flex: 4,
+            wrap: true
+          },
+          {
+            type: "text",
+            text: `฿${(item.price * item.quantity).toLocaleString()}`,
+            size: "sm",
+            color: "#0F172A",
+            weight: "bold",
+            align: "end",
+            flex: 2
+          }
+        ],
+        margin: "md"
+      };
+    });
 
     return {
       type: "flex",
-      altText: `ใบเสร็จคำสั่งซื้อ #${orderData.order_id} - ${CONFIG.SHOP_NAME}`,
+      altText: `ใบสั่งซื้อ #${orderData.order_id} - ${CONFIG.SHOP_NAME}`,
       contents: {
         type: "bubble",
         size: "mega",
         header: {
           type: "box",
           layout: "vertical",
-          backgroundColor: "#06C755",
+          backgroundColor: "#0F172A",
           paddingAll: "20px",
           contents: [
             {
@@ -147,14 +151,16 @@ const LiffHandler = {
               text: CONFIG.SHOP_NAME,
               color: "#FFFFFF",
               weight: "bold",
-              size: "lg"
+              size: "xl",
+              letterSpacing: "2px"
             },
             {
               type: "text",
-              text: "ใบเสร็จคำสั่งซื้อ / Order Receipt",
-              color: "#E8F8EE",
-              size: "xs",
-              margin: "xs"
+              text: "OFFICIAL ORDER RECEIPT & PROMPTPAY",
+              color: "#94A3B8",
+              size: "xxs",
+              margin: "xs",
+              letterSpacing: "1px"
             }
           ]
         },
@@ -172,13 +178,13 @@ const LiffHandler = {
                   type: "text",
                   text: "เลขที่ออเดอร์",
                   size: "xs",
-                  color: "#888888"
+                  color: "#64748B"
                 },
                 {
                   type: "text",
                   text: orderData.order_id,
                   size: "xs",
-                  color: "#111111",
+                  color: "#0F172A",
                   weight: "bold",
                   align: "end"
                 }
@@ -190,15 +196,15 @@ const LiffHandler = {
               contents: [
                 {
                   type: "text",
-                  text: "เวลาที่สั่งซื้อ",
+                  text: "เวลาสั่งซื้อ",
                   size: "xs",
-                  color: "#888888"
+                  color: "#64748B"
                 },
                 {
                   type: "text",
                   text: orderData.timestamp || new Date().toLocaleString("th-TH"),
                   size: "xs",
-                  color: "#555555",
+                  color: "#64748B",
                   align: "end"
                 }
               ],
@@ -212,13 +218,14 @@ const LiffHandler = {
                   type: "text",
                   text: "ลูกค้า",
                   size: "xs",
-                  color: "#888888"
+                  color: "#64748B"
                 },
                 {
                   type: "text",
                   text: orderData.customer_name || "-",
                   size: "xs",
-                  color: "#555555",
+                  color: "#334155",
+                  weight: "bold",
                   align: "end"
                 }
               ],
@@ -247,57 +254,105 @@ const LiffHandler = {
               contents: [
                 {
                   type: "text",
-                  text: "ยอดรวมทั้งสิ้น",
+                  text: "ยอดชำระทั้งสิ้น",
                   size: "md",
                   weight: "bold",
-                  color: "#111111"
+                  color: "#0F172A"
                 },
                 {
                   type: "text",
                   text: `฿${Number(orderData.total_amount).toLocaleString()}`,
                   size: "xl",
                   weight: "bold",
-                  color: "#06C755",
+                  color: "#059669",
                   align: "end"
                 }
               ]
             },
-            // ข้อมูลการจัดส่ง
+            // ข้อมูลการชำระเงิน PromptPay
             {
               type: "box",
               layout: "vertical",
               margin: "lg",
-              backgroundColor: "#F8FAFC",
+              backgroundColor: "#F1F5F9",
+              paddingAll: "14px",
+              cornerRadius: "10px",
+              contents: [
+                {
+                  type: "text",
+                  text: "💳 ข้อมูลการชำระเงิน (PromptPay)",
+                  size: "xs",
+                  weight: "bold",
+                  color: "#0F172A"
+                },
+                {
+                  type: "text",
+                  text: `พร้อมเพย์: ${CONFIG.PROMPTPAY_NUMBER} (${CONFIG.PROMPTPAY_NAME})`,
+                  size: "xs",
+                  color: "#334155",
+                  margin: "xs"
+                },
+                {
+                  type: "text",
+                  text: "สถานะ: รอตรวจสอบสลิปโอนเงิน",
+                  size: "xs",
+                  color: "#D97706",
+                  weight: "bold",
+                  margin: "xs"
+                }
+              ]
+            },
+            // แจ้งเตือนส่งสลิป
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "md",
+              backgroundColor: "#ECFDF5",
               paddingAll: "12px",
               cornerRadius: "8px",
               contents: [
                 {
                   type: "text",
-                  text: "📍 ข้อมูลจัดส่ง / ติดต่อ",
+                  text: "📸 กรุณาส่งรูปสลิปโอนเงินเข้ามาในแชทนี้",
                   size: "xs",
                   weight: "bold",
-                  color: "#334155"
+                  color: "#065F46"
+                },
+                {
+                  type: "text",
+                  text: "เมื่อส่งสลิปแล้ว ทีมงานจะตรวจสอบและแพ็กจัดส่งให้ทันทีครับ",
+                  size: "xxs",
+                  color: "#047857",
+                  wrap: true,
+                  margin: "xs"
+                }
+              ]
+            },
+            // ข้อมูลจัดส่ง
+            {
+              type: "box",
+              layout: "vertical",
+              margin: "md",
+              contents: [
+                {
+                  type: "text",
+                  text: `จัดส่งที่: ${orderData.address || "-"}`,
+                  size: "xxs",
+                  color: "#64748B",
+                  wrap: true
                 },
                 {
                   type: "text",
                   text: `โทร: ${orderData.phone || "-"}`,
-                  size: "xs",
+                  size: "xxs",
                   color: "#64748B",
-                  margin: "xs"
-                },
-                {
-                  type: "text",
-                  text: `ที่อยู่: ${orderData.address || "-"}`,
-                  size: "xs",
-                  color: "#64748B",
-                  wrap: true,
                   margin: "xs"
                 },
                 orderData.note ? {
                   type: "text",
                   text: `หมายเหตุ: ${orderData.note}`,
-                  size: "xs",
-                  color: "#F59E0B",
+                  size: "xxs",
+                  color: "#94A3B8",
                   wrap: true,
                   margin: "xs"
                 } : { type: "box", layout: "vertical", contents: [] }
@@ -308,14 +363,16 @@ const LiffHandler = {
         footer: {
           type: "box",
           layout: "vertical",
-          paddingAll: "15px",
+          paddingAll: "14px",
           contents: [
             {
               type: "text",
-              text: "ขอบคุณที่ใช้บริการครับ 🙏",
-              size: "sm",
-              color: "#888888",
-              align: "center"
+              text: "THANK YOU FOR SHOPPING WITH GEONCE",
+              size: "xxs",
+              color: "#94A3B8",
+              weight: "bold",
+              align: "center",
+              letterSpacing: "1px"
             }
           ]
         }

@@ -70,14 +70,17 @@ function doPost(e) {
     const address = payload.address || "";
     const note = payload.note || "";
     const totalAmount = Number(payload.total_amount) || 0;
+    const paymentMethod = payload.payment_method || "PromptPay QR";
+    const paymentStatus = payload.payment_status || "WAITING_PAYMENT";
 
     // 2. สร้าง Order ID (รูปแบบ: ORD-YYYYMMDD-XXXX)
     const orderId = generateOrderId();
     const formattedTimestamp = Utilities.formatDate(new Date(), "Asia/Bangkok", "yyyy-MM-dd HH:mm:ss");
 
-    // 3. สรุปรายการสินค้าเป็นข้อความอ่านง่าย
+    // 3. สรุปรายการสินค้าเป็นข้อความอ่านง่าย (รวมข้อมูล Size สำหรับเสื้อผ้า)
     const itemsSummary = payload.items.map(function(item) {
-      return item.name + " (x" + item.quantity + ")";
+      const sizeTag = item.size ? " [" + item.size + "]" : "";
+      return item.name + sizeTag + " (x" + item.quantity + ")";
     }).join(", ");
 
     const itemsJson = JSON.stringify(payload.items);
@@ -98,6 +101,8 @@ function doPost(e) {
       itemsSummary,
       itemsJson,
       totalAmount,
+      paymentMethod,
+      paymentStatus,
       "PENDING", // สถานะเริ่มต้นของออเดอร์
       note
     ]);
@@ -114,7 +119,9 @@ function doPost(e) {
       message: "Order placed successfully",
       order_id: orderId,
       timestamp: formattedTimestamp,
-      total_amount: totalAmount
+      total_amount: totalAmount,
+      payment_method: paymentMethod,
+      payment_status: paymentStatus
     });
 
   } catch (err) {
@@ -261,7 +268,7 @@ function setupDatabase() {
   }
   
   const orderHeaders = [
-    ["order_id", "timestamp", "line_user_id", "customer_name", "phone", "address", "items_summary", "items_json", "total_amount", "status", "note"]
+    ["order_id", "timestamp", "line_user_id", "customer_name", "phone", "address", "items_summary", "items_json", "total_amount", "payment_method", "payment_status", "status", "note"]
   ];
   ordersSheet.getRange(1, 1, 1, orderHeaders[0].length).setValues(orderHeaders);
   

@@ -9,9 +9,19 @@ const CONFIG = {
   // 2. นำ Web App URL ที่ได้จากการกด Deploy ใน Apps Script มาใส่ที่นี่ (ต้องลงท้ายด้วย /exec)
   GAS_API_URL: "https://script.google.com/macros/s/AKfycbyQesQYj6FUG45kIVB6Lsv4ie7gEiQ1XGZSlWZhh_d5PDqLDSZU4Lwo80-pFtXqOQuiWA/exec",
 
-  // ข้อมูลร้านค้าเริ่มต้น
-  SHOP_NAME: "Geonce Cafe & Bakery",
+  // ข้อมูลร้านค้าแบรนด์เสื้อผ้า GEONCE
+  SHOP_NAME: "GEONCE",
+  SHOP_TAGLINE: "Official Streetwear & Contemporary Apparel",
   CURRENCY_SYMBOL: "฿",
+
+  // การตั้งค่าชำระเงินผ่าน PromptPay QR
+  // สามารถเปลี่ยนเป็นเบอร์โทรศัพท์ (10 หลัก) หรือเลขประจำตัวประชาชน/นิติบุคคล (13 หลัก) ของร้าน
+  PROMPTPAY_NUMBER: "0812345678",
+  PROMPTPAY_NAME: "GEONCE OFFICIAL STORE",
+  BANK_NAME: "พร้อมเพย์ (PromptPay)",
+
+  // ตัวเลือกขนาดเสื้อผ้าเริ่มต้น
+  DEFAULT_SIZES: ["S", "M", "L", "XL"],
 
   // รายการสินค้าสำรอง (ไม่มี mock data - โหลดจาก Google Sheets เท่านั้น)
   MOCK_PRODUCTS: []

@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Geonce Cafe & Store - ระบบสั่งซื้อผ่าน LINE LIFF</title>
+  <title>GEONCE - Official Store | เสื้อผ้าสตรีทแวร์ สั่งซื้อผ่าน LINE LIFF</title>
   
-  <!-- Google Fonts: Prompt -->
+  <!-- Google Fonts: Syne & Prompt -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
   
   <!-- CSS Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
@@ -22,30 +22,46 @@
     <!-- Header Section -->
     <header class="app-header">
       <div class="header-top">
-        <div class="user-profile">
-          <div class="avatar-wrapper">
-            <img id="userAvatar" src="https://placehold.co/100?text=LINE" alt="User Profile" class="user-avatar">
-          </div>
-          <div class="user-info">
-            <span id="userName" class="user-name">กำลังโหลด...</span>
-            <div id="liffStatusBadge" class="status-badge">
-              <span class="badge-dot green"></span> กำลังเชื่อมต่อ LINE
-            </div>
-          </div>
+        <div class="brand-area">
+          <span class="brand-logo">GEONCE</span>
+          <span class="brand-sub">OFFICIAL STORE</span>
         </div>
 
-        <button id="openCartBtn" class="header-cart-btn" aria-label="ดูตะกร้าสินค้า">
-          🛒
-          <span id="headerCartCount" class="cart-count-badge" style="display: none;">0</span>
-        </button>
+        <div class="header-actions">
+          <div class="user-profile">
+            <div class="avatar-wrapper">
+              <img id="userAvatar" src="https://placehold.co/100?text=LINE" alt="User Profile" class="user-avatar">
+            </div>
+            <div class="user-info">
+              <span id="userName" class="user-name">กำลังโหลด...</span>
+              <div id="liffStatusBadge" class="status-badge">
+                <span class="badge-dot green"></span> เชื่อมต่อ LINE
+              </div>
+            </div>
+          </div>
+
+          <button id="openCartBtn" class="header-cart-btn" aria-label="ดูตะกร้าสินค้า">
+            🛍️
+            <span id="headerCartCount" class="cart-count-badge" style="display: none;">0</span>
+          </button>
+        </div>
       </div>
     </header>
+
+    <!-- Brand Hero Banner -->
+    <section class="brand-hero">
+      <div class="hero-content">
+        <span class="hero-tag">NEW COLLECTION 2026</span>
+        <h2 class="hero-title">STREETWEAR & CONTEMPORARY</h2>
+        <p class="hero-desc">สินค้าแฟชั่นพรีเมียม สั่งซื้อง่าย ชำระเงินผ่าน PromptPay QR</p>
+      </div>
+    </section>
 
     <!-- Search Section -->
     <section class="search-container">
       <div class="search-bar">
         <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="ค้นหาเมนูเครื่องดื่ม เบเกอรี่...">
+        <input type="text" id="searchInput" placeholder="ค้นหาเสื้อยืด ฮู้ด กางเกง หมวก...">
       </div>
     </section>
 
@@ -53,13 +69,17 @@
     <section class="category-container">
       <div id="categoryTabs" class="category-tabs">
         <button class="cat-pill active" data-category="All">ทั้งหมด</button>
+        <button class="cat-pill" data-category="T-Shirts">T-Shirts</button>
+        <button class="cat-pill" data-category="Hoodies">Hoodies</button>
+        <button class="cat-pill" data-category="Pants">Pants</button>
+        <button class="cat-pill" data-category="Accessories">Accessories</button>
       </div>
     </section>
 
     <!-- Product Catalog Grid -->
     <main class="catalog-section">
       <div class="section-header">
-        <h1 class="section-title">เมนูแนะนำ</h1>
+        <h1 class="section-title">สินค้าทั้งหมด</h1>
       </div>
       <div id="productGrid" class="product-grid">
         <!-- เรนเดอร์การ์ดสินค้าโดย JavaScript -->
@@ -69,9 +89,9 @@
     <!-- Sticky Floating Bottom Cart Bar -->
     <div id="floatingCartBar" class="floating-cart-bar">
       <div class="floating-cart-left">
-        <span class="floating-cart-icon">🛍️</span>
+        <span class="floating-cart-icon">🛒</span>
         <div>
-          <div id="floatingCartCount" class="floating-cart-count">0 รายการ</div>
+          <div id="floatingCartCount" class="floating-cart-count">0 ชิ้น</div>
           <div id="floatingCartTotal" class="floating-cart-total">฿0</div>
         </div>
       </div>
@@ -81,11 +101,44 @@
     </div>
   </div>
 
+  <!-- Size Selection Modal -->
+  <div id="sizeModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2 id="sizeModalTitle">เลือกขนาดสินค้า</h2>
+        <button id="closeSizeBtn" class="modal-close-btn" aria-label="ปิด">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="size-modal-product">
+          <img id="sizeModalImg" src="" alt="Product" class="size-modal-thumb">
+          <div>
+            <div id="sizeModalName" class="size-modal-pname">ชื่อสินค้า</div>
+            <div id="sizeModalPrice" class="size-modal-price">฿0</div>
+          </div>
+        </div>
+
+        <div class="size-selection-area">
+          <label class="size-label">กรุณาเลือกไซส์ (SIZE):</label>
+          <div id="sizePillGroup" class="size-pill-group">
+            <button class="size-pill active" data-size="S">S</button>
+            <button class="size-pill" data-size="M">M</button>
+            <button class="size-pill" data-size="L">L</button>
+            <button class="size-pill" data-size="XL">XL</button>
+          </div>
+        </div>
+
+        <button id="confirmAddToCartBtn" class="primary-btn" style="margin-top: 20px;">
+          เพิ่มลงตะกร้า 🛍️
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Cart Modal (Bottom Sheet) -->
   <div id="cartModal" class="modal-overlay">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h2>ตะกร้าสินค้าของคุณ</h2>
+        <h2>ตะกร้าสินค้า (GEONCE)</h2>
         <button id="closeCartBtn" class="modal-close-btn" aria-label="ปิด">✕</button>
       </div>
       <div class="modal-body">
@@ -95,21 +148,21 @@
       </div>
       <div class="modal-footer">
         <div class="cart-total-summary">
-          <span class="cart-total-label">ยอดรวมชำระ:</span>
+          <span class="cart-total-label">ยอดรวมสุทธิ:</span>
           <span id="cartTotalPrice" class="cart-total-value">฿0</span>
         </div>
         <button id="proceedCheckoutBtn" class="primary-btn" disabled>
-          ดำเนินการสั่งซื้อ ❯
+          ดำเนินการสั่งซื้อและชำระเงิน ❯
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Checkout Modal -->
+  <!-- Checkout Modal (Step 1: ข้อมูลจัดส่ง) -->
   <div id="checkoutModal" class="modal-overlay">
     <div class="modal-sheet">
       <div class="modal-header">
-        <h2>ข้อมูลการจัดส่งและสั่งซื้อ</h2>
+        <h2>ข้อมูลการจัดส่ง</h2>
         <button id="closeCheckoutBtn" class="modal-close-btn" aria-label="ปิด">✕</button>
       </div>
       <div class="modal-body">
@@ -119,7 +172,7 @@
           </div>
 
           <div class="form-group">
-            <label for="customerNameInput">ชื่อผู้สั่งซื้อ *</label>
+            <label for="customerNameInput">ชื่อ-นามสกุลผู้รับ *</label>
             <input type="text" id="customerNameInput" required placeholder="ชื่อ-นามสกุล">
           </div>
 
@@ -129,19 +182,72 @@
           </div>
 
           <div class="form-group">
-            <label for="addressInput">ที่อยู่จัดส่ง / สาขาที่รับสินค้า</label>
-            <textarea id="addressInput" rows="2" placeholder="ระบุบ้านเลขที่ ซอย ถนน แขวง/ตำบล เขต/อำเภอ"></textarea>
+            <label for="addressInput">ที่อยู่จัดส่ง *</label>
+            <textarea id="addressInput" required rows="2" placeholder="บ้านเลขที่ ซอย ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์"></textarea>
           </div>
 
           <div class="form-group">
             <label for="noteInput">หมายเหตุเพิ่มเติม</label>
-            <input type="text" id="noteInput" placeholder="เช่น หวานน้อย, แยกน้ำแข็ง">
+            <input type="text" id="noteInput" placeholder="เช่น ฝากไว้หน้าบ้าน, โทรแจ้งก่อนส่ง">
           </div>
 
-          <button type="submit" id="submitOrderBtn" class="primary-btn" style="margin-top: 10px;">
-            ยืนยันการสั่งซื้อ
+          <button type="submit" id="toPaymentBtn" class="primary-btn" style="margin-top: 10px;">
+            ถัดไป: สแกนชำระผ่าน PromptPay QR ❯
           </button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- PromptPay QR Payment Modal (Step 2: สแกนชำระเงิน) -->
+  <div id="paymentModal" class="modal-overlay">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h2>ชำระเงินผ่าน PromptPay QR</h2>
+        <button id="closePaymentBtn" class="modal-close-btn" aria-label="ปิด">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="payment-content">
+          <!-- บัตรแสดงยอดเงินและ QR Code -->
+          <div class="qr-card">
+            <div class="qr-brand-badge">PROMPTPAY OFFICIAL</div>
+            <div class="qr-amount-display">
+              <span class="qr-amount-label">ยอดที่ต้องชำระ:</span>
+              <span id="promptpayAmount" class="qr-amount-value">฿0</span>
+            </div>
+
+            <!-- รูปภาพ QR Code แบบ Dynamic -->
+            <div class="qr-wrapper">
+              <img id="promptpayQrImg" src="" alt="PromptPay QR Code" class="promptpay-qr-image">
+            </div>
+
+            <div class="promptpay-account-box">
+              <div class="pp-row">
+                <span class="pp-label">พร้อมเพย์:</span>
+                <span id="promptpayNumberText" class="pp-val">0812345678</span>
+                <button type="button" id="copyPpBtn" class="copy-btn">คัดลอก</button>
+              </div>
+              <div class="pp-row">
+                <span class="pp-label">ชื่อบัญชี:</span>
+                <span id="promptpayNameText" class="pp-val">GEONCE OFFICIAL STORE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- คำแนะนำการส่งสลิป -->
+          <div class="slip-notice-box">
+            <div class="notice-title">📸 การยืนยันชำระเงิน</div>
+            <p class="notice-desc">
+              1. สแกน QR Code หรือโอนผ่านเลขพร้อมเพย์ด้านบน<br>
+              2. กดปุ่ม <b>"ยืนยันการโอนเงิน"</b> ด้านล่างนี้<br>
+              3. <b>ส่งรูปภาพสลิปโอนเงินเข้ามาในแชท LINE</b> เพื่อให้แอดมินตรวจสอบและจัดส่งสินค้าทันที
+            </p>
+          </div>
+
+          <button type="button" id="confirmPaidBtn" class="primary-btn">
+            ฉันโอนเงินเรียบร้อยแล้ว (ยืนยันคำสั่งซื้อ)
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -152,20 +258,24 @@
       <div class="modal-body">
         <div class="success-content">
           <div class="success-icon-wrap">🎉</div>
-          <h2 class="success-title">สั่งซื้อสินค้าเรียบร้อย!</h2>
-          <p style="color: var(--secondary-color); font-size: 0.9rem;">ระบบได้บันทึกคำสั่งซื้อของคุณเข้าสู่ระบบแล้ว</p>
+          <h2 class="success-title">บันทึกคำสั่งซื้อสำเร็จ!</h2>
+          <p style="color: var(--secondary-color); font-size: 0.9rem;">ขอบคุณที่เลือกซื้อสินค้าแบรนด์ GEONCE</p>
           
           <div class="success-order-box">
             <div class="order-badge-label">เลขที่คำสั่งซื้อ</div>
             <div id="successOrderId" class="order-id-highlight">-</div>
-            <div style="font-size: 0.9rem; margin-top: 4px;">
-              ยอดรวม: <b id="successTotal" style="color: var(--line-green);">-</b>
+            <div style="font-size: 0.95rem; margin-top: 6px;">
+              ยอดชำระ: <b id="successTotal" style="color: var(--accent-green); font-size: 1.15rem;">-</b>
             </div>
+            <div class="payment-badge">ช่องทาง: PromptPay QR</div>
           </div>
 
           <div class="success-line-notice">
-            <span>💬</span>
-            <span>ส่งใบเสร็จสรุปออเดอร์เข้าห้องแชท LINE แล้ว</span>
+            <span style="font-size: 1.2rem;">💬</span>
+            <span style="font-size: 0.85rem; line-height: 1.4;">
+              ส่งใบเสร็จรับเงินเข้าแชท LINE แล้ว<br>
+              <b>อย่าลืมส่งรูปสลิปโอนเงินเข้าห้องแชท LINE นะครับ</b>
+            </span>
           </div>
 
           <button id="closeSuccessBtn" class="primary-btn">

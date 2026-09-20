@@ -44,7 +44,7 @@ function setupDatabase() {
   
   // Headers สำหรับ Orders
   const orderHeaders = [
-    ["order_id", "timestamp", "line_user_id", "customer_name", "phone", "address", "items_summary", "items_json", "total_amount", "status", "note"]
+    ["order_id", "timestamp", "line_user_id", "customer_name", "phone", "address", "items_summary", "items_json", "total_amount", "payment_method", "payment_status", "status", "note"]
   ];
   ordersSheet.getRange(1, 1, 1, orderHeaders[0].length).setValues(orderHeaders);
   

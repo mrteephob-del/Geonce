@@ -1,6 +1,6 @@
 /**
- * Main Application Logic
- * จัดการ State ของสินค้า, ตะกร้าสินค้า, การค้นหา, และการส่งออเดอร์
+ * Main Application Logic - GEONCE Official Store
+ * จัดการ State สินค้า, ระบบเลือกไซส์ (Size), ตะกร้าสินค้า, และชำระเงินผ่าน PromptPay QR
  */
 
 const App = {
@@ -9,6 +9,13 @@ const App = {
   selectedCategory: "All",
   searchKeyword: "",
   isLoading: false,
+  
+  // เก็บสินค้าชั่วคราวขณะเปิด Size Modal
+  currentSelectingProduct: null,
+  selectedSize: "M",
+  
+  // เก็บข้อมูลฟอร์มจัดส่งชั่วคราวระหว่างไปหน้าชำระเงิน
+  pendingCheckoutData: null,
 
   /**
    * เริ่มต้นแอปพลิเคชัน
@@ -54,7 +61,7 @@ const App = {
       closeCartBtn.addEventListener("click", () => this.closeCartModal());
     }
 
-    // ปุ่มไปหน้า Checkout
+    // ปุ่มไปหน้ากรอกข้อมูลจัดส่ง (Checkout)
     const proceedCheckoutBtn = document.getElementById("proceedCheckoutBtn");
     if (proceedCheckoutBtn) {
       proceedCheckoutBtn.addEventListener("click", () => this.openCheckoutModal());
@@ -66,19 +73,72 @@ const App = {
       closeCheckoutBtn.addEventListener("click", () => this.closeCheckoutModal());
     }
 
-    // ฟอร์มสั่งซื้อ
+    // ฟอร์มส่งข้อมูลจัดส่ง -> ไปยังหน้าชำระเงิน PromptPay QR
     const checkoutForm = document.getElementById("checkoutForm");
     if (checkoutForm) {
       checkoutForm.addEventListener("submit", (e) => {
         e.preventDefault();
-        this.handleCheckoutSubmit();
+        this.proceedToPaymentModal();
       });
+    }
+
+    // ปุ่มปิด Modal ชำระเงิน PromptPay
+    const closePaymentBtn = document.getElementById("closePaymentBtn");
+    if (closePaymentBtn) {
+      closePaymentBtn.addEventListener("click", () => this.closePaymentModal());
+    }
+
+    // ปุ่มคัดลอกเลข PromptPay
+    const copyPpBtn = document.getElementById("copyPpBtn");
+    if (copyPpBtn) {
+      copyPpBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(CONFIG.PROMPTPAY_NUMBER).then(() => {
+          showToast("คัดลอกเลขพร้อมเพย์เรียบร้อยแล้ว", "success");
+        }).catch(() => {
+          showToast(`เลขพร้อมเพย์: ${CONFIG.PROMPTPAY_NUMBER}`, "info");
+        });
+      });
+    }
+
+    // ปุ่มยืนยันการโอนเงิน (บันทึกออเดอร์และส่ง Flex Message)
+    const confirmPaidBtn = document.getElementById("confirmPaidBtn");
+    if (confirmPaidBtn) {
+      confirmPaidBtn.addEventListener("click", () => this.handleOrderSubmission());
     }
 
     // ปุ่มปิด Modal สำเร็จ
     const closeSuccessBtn = document.getElementById("closeSuccessBtn");
     if (closeSuccessBtn) {
       closeSuccessBtn.addEventListener("click", () => this.closeSuccessModal());
+    }
+
+    // ปิด Size Modal
+    const closeSizeBtn = document.getElementById("closeSizeBtn");
+    if (closeSizeBtn) {
+      closeSizeBtn.addEventListener("click", () => this.closeSizeModal());
+    }
+
+    // เลือกไซส์ใน Size Modal
+    const sizePillGroup = document.getElementById("sizePillGroup");
+    if (sizePillGroup) {
+      sizePillGroup.querySelectorAll(".size-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+          sizePillGroup.querySelectorAll(".size-pill").forEach(p => p.classList.remove("active"));
+          pill.classList.add("active");
+          this.selectedSize = pill.getAttribute("data-size");
+        });
+      });
+    }
+
+    // ปุ่มยืนยันเพิ่มลงตะกร้าจาก Size Modal
+    const confirmAddToCartBtn = document.getElementById("confirmAddToCartBtn");
+    if (confirmAddToCartBtn) {
+      confirmAddToCartBtn.addEventListener("click", () => {
+        if (this.currentSelectingProduct) {
+          this.executeAddToCart(this.currentSelectingProduct, this.selectedSize);
+          this.closeSizeModal();
+        }
+      });
     }
   },
 
@@ -91,17 +151,16 @@ const App = {
       productGrid.innerHTML = `
         <div class="loading-state">
           <div class="spinner"></div>
-          <p>กำลังโหลดรายการสินค้า...</p>
+          <p>กำลังโหลดคอลเลกชันสินค้า...</p>
         </div>
       `;
     }
 
-    // ตรวจสอบว่าได้ตั้งค่า GAS URL หรือไม่
     const isGasConfigured = CONFIG.GAS_API_URL && CONFIG.GAS_API_URL !== "YOUR_GAS_WEB_APP_URL";
 
     if (!isGasConfigured) {
-      console.warn("⚠️ ยังไม่ได้กำหนด GAS_API_URL: ใช้งานข้อมูลสินค้าตัวอย่าง (Mock Data)");
-      this.products = CONFIG.MOCK_PRODUCTS;
+      console.warn("⚠️ ยังไม่ได้กำหนด GAS_API_URL: ไม่มีสินค้าจาก API");
+      this.products = [];
       this.renderCategories();
       this.renderProducts();
       return;
@@ -113,14 +172,14 @@ const App = {
 
       if (result.status === "success" && Array.isArray(result.data)) {
         this.products = result.data;
-        console.log("✅ โหลดสินค้าจาก Google Sheets สำเร็จ:", this.products);
+        console.log("✅ โหลดสินค้าเสื้อผ้า GEONCE สำเร็จ:", this.products);
       } else {
         throw new Error(result.message || "Failed to load products");
       }
     } catch (err) {
       console.error("❌ ไม่สามารถดึงสินค้าจาก API ได้:", err);
-      showToast("ไม่สามารถโหลดสินค้าจาก Sheet ได้ กำลังใช้ข้อมูลสำรอง", "warning");
-      this.products = CONFIG.MOCK_PRODUCTS;
+      showToast("ไม่สามารถโหลดสินค้าจาก Google Sheet ได้", "error");
+      this.products = [];
     }
 
     this.renderCategories();
@@ -134,8 +193,11 @@ const App = {
     const categoryTabs = document.getElementById("categoryTabs");
     if (!categoryTabs) return;
 
-    // หาหมวดหมู่ที่ไม่ซ้ำกัน
-    const categories = ["All", ...new Set(this.products.map(p => p.category).filter(Boolean))];
+    // หาหมวดหมู่ที่ไม่ซ้ำกันจากฐานข้อมูล
+    const availableCategories = [...new Set(this.products.map(p => p.category).filter(Boolean))];
+    const categories = availableCategories.length > 0 
+      ? ["All", ...availableCategories] 
+      : ["All", "T-Shirts", "Hoodies", "Pants", "Accessories"];
 
     categoryTabs.innerHTML = categories.map(cat => `
       <button class="cat-pill ${this.selectedCategory === cat ? 'active' : ''}" data-category="${cat}">
@@ -143,7 +205,6 @@ const App = {
       </button>
     `).join("");
 
-    // ผูก Event Click แต่ละปุ่ม
     categoryTabs.querySelectorAll(".cat-pill").forEach(btn => {
       btn.addEventListener("click", () => {
         categoryTabs.querySelectorAll(".cat-pill").forEach(b => b.classList.remove("active"));
@@ -161,7 +222,6 @@ const App = {
     const productGrid = document.getElementById("productGrid");
     if (!productGrid) return;
 
-    // กรองสินค้าตามหมวดหมู่และคำค้นหา
     const filtered = this.products.filter(item => {
       const matchCat = this.selectedCategory === "All" || item.category === this.selectedCategory;
       const matchSearch = !this.searchKeyword || 
@@ -173,9 +233,9 @@ const App = {
     if (filtered.length === 0) {
       productGrid.innerHTML = `
         <div class="empty-state">
-          <div class="empty-icon">🔍</div>
-          <h3>ไม่พบสินค้าที่คุณค้นหา</h3>
-          <p>ลองค้นหาด้วยคำอื่น หรือเลือกหมวดหมู่อื่นดูนะครับ</p>
+          <div class="empty-icon">👕</div>
+          <h3>ยังไม่พบสินค้าในระบบ</h3>
+          <p>กรุณาเพิ่มรายการสินค้าลงในแผ่นงาน Products บน Google Sheets นะครับ</p>
         </div>
       `;
       return;
@@ -183,18 +243,16 @@ const App = {
 
     productGrid.innerHTML = filtered.map(item => {
       const isOutOfStock = Number(item.stock) <= 0 || item.status === "OUT_OF_STOCK";
-      const cartItem = this.cart.find(c => c.id === item.id);
-      const currentQty = cartItem ? cartItem.quantity : 0;
 
       return `
         <div class="product-card ${isOutOfStock ? 'out-of-stock' : ''}">
           <div class="product-image-wrap">
-            <img src="${item.image_url || 'https://placehold.co/400x300?text=No+Image'}" 
+            <img src="${item.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&auto=format&fit=crop&q=80'}" 
                  alt="${item.name}" 
                  class="product-image"
                  loading="lazy"
-                 onerror="this.src='https://placehold.co/400x300?text=No+Image'">
-            <span class="product-category-tag">${item.category || 'General'}</span>
+                 onerror="this.src='https://placehold.co/400x400?text=GEONCE'">
+            <span class="product-category-tag">${item.category || 'Apparel'}</span>
             ${isOutOfStock ? '<div class="out-of-stock-badge">สินค้าหมด</div>' : ''}
           </div>
           <div class="product-body">
@@ -208,7 +266,7 @@ const App = {
               <button class="add-to-cart-btn" 
                       data-id="${item.id}" 
                       ${isOutOfStock ? 'disabled' : ''}>
-                ${currentQty > 0 ? `เพิ่มอีก (${currentQty})` : '+ เพิ่ม'}
+                + เลือกไซส์
               </button>
             </div>
           </div>
@@ -216,27 +274,66 @@ const App = {
       `;
     }).join("");
 
-    // ผูก Event ปุ่มเพิ่มลงตะกร้า
     productGrid.querySelectorAll(".add-to-cart-btn").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
         const id = btn.getAttribute("data-id");
-        this.addToCart(id);
+        this.openSizeModal(id);
       });
     });
   },
 
   /**
-   * เพิ่มสินค้าลงตะกร้า
+   * เปิด Modal สำหรับเลือกขนาดเสื้อผ้า (Size S, M, L, XL)
    */
-  addToCart(productId) {
+  openSizeModal(productId) {
     const product = this.products.find(p => p.id === productId);
     if (!product) return;
 
-    const existingIndex = this.cart.findIndex(c => c.id === productId);
+    this.currentSelectingProduct = product;
+    this.selectedSize = "M"; // default
+
+    const modal = document.getElementById("sizeModal");
+    const thumb = document.getElementById("sizeModalImg");
+    const nameEl = document.getElementById("sizeModalName");
+    const priceEl = document.getElementById("sizeModalPrice");
+    const sizePills = document.getElementById("sizePillGroup");
+
+    if (thumb) thumb.src = product.image_url || "https://placehold.co/100?text=GEONCE";
+    if (nameEl) nameEl.textContent = product.name;
+    if (priceEl) priceEl.textContent = `฿${Number(product.price).toLocaleString()}`;
+
+    if (sizePills) {
+      sizePills.querySelectorAll(".size-pill").forEach(p => {
+        p.classList.toggle("active", p.getAttribute("data-size") === "M");
+      });
+    }
+
+    if (modal) {
+      modal.classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+  },
+
+  /**
+   * ปิด Modal เลือกไซส์
+   */
+  closeSizeModal() {
+    const modal = document.getElementById("sizeModal");
+    if (modal) {
+      modal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+  },
+
+  /**
+   * เพิ่มสินค้าพร้อมขนาดลงตะกร้า
+   */
+  executeAddToCart(product, size) {
+    const cartItemId = `${product.id}_${size}`;
+    const existingIndex = this.cart.findIndex(c => c.cartItemId === cartItemId);
 
     if (existingIndex > -1) {
-      // ตรวจสอบสต็อก
       if (this.cart[existingIndex].quantity + 1 > product.stock) {
         showToast("ขออภัย สินค้าในสต็อกมีไม่เพียงพอ", "warning");
         return;
@@ -248,8 +345,10 @@ const App = {
         return;
       }
       this.cart.push({
+        cartItemId: cartItemId,
         id: product.id,
         name: product.name,
+        size: size,
         price: Number(product.price),
         image_url: product.image_url,
         quantity: 1,
@@ -257,16 +356,15 @@ const App = {
       });
     }
 
-    showToast(`เพิ่ม "${product.name}" ลงตะกร้าแล้ว`, "success");
+    showToast(`เพิ่ม "${product.name} [Size ${size}]" ลงตะกร้าแล้ว`, "success");
     this.updateCartBadge();
-    this.renderProducts();
   },
 
   /**
    * เปลี่ยนแปลงจำนวนสินค้าในตะกร้า
    */
-  updateQuantity(productId, delta) {
-    const itemIndex = this.cart.findIndex(c => c.id === productId);
+  updateQuantity(cartItemId, delta) {
+    const itemIndex = this.cart.findIndex(c => c.cartItemId === cartItemId);
     if (itemIndex === -1) return;
 
     const item = this.cart[itemIndex];
@@ -284,21 +382,19 @@ const App = {
 
     this.updateCartBadge();
     this.renderCartItems();
-    this.renderProducts();
   },
 
   /**
    * ลบสินค้าออกจากตะกร้า
    */
-  removeFromCart(productId) {
-    this.cart = this.cart.filter(c => c.id !== productId);
+  removeFromCart(cartItemId) {
+    this.cart = this.cart.filter(c => c.cartItemId !== cartItemId);
     this.updateCartBadge();
     this.renderCartItems();
-    this.renderProducts();
   },
 
   /**
-   * คำนวณยอดรวมทั้งสิ้น
+   * คำนวณยอดรวมสุทธิ
    */
   getCartTotals() {
     const totalItems = this.cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -312,14 +408,12 @@ const App = {
   updateCartBadge() {
     const { totalItems, totalAmount } = this.getCartTotals();
 
-    // อัปเดตปุ่มหัวเว็บ
     const headerBadge = document.getElementById("headerCartCount");
     if (headerBadge) {
       headerBadge.textContent = totalItems;
       headerBadge.style.display = totalItems > 0 ? "inline-flex" : "none";
     }
 
-    // อัปเดต Sticky Floating Bar
     const floatingBar = document.getElementById("floatingCartBar");
     const floatingCount = document.getElementById("floatingCartCount");
     const floatingTotal = document.getElementById("floatingCartTotal");
@@ -327,7 +421,7 @@ const App = {
     if (floatingBar) {
       if (totalItems > 0) {
         floatingBar.classList.add("visible");
-        if (floatingCount) floatingCount.textContent = `${totalItems} รายการ`;
+        if (floatingCount) floatingCount.textContent = `${totalItems} ชิ้น`;
         if (floatingTotal) floatingTotal.textContent = `${CONFIG.CURRENCY_SYMBOL}${totalAmount.toLocaleString()}`;
       } else {
         floatingBar.classList.remove("visible");
@@ -372,7 +466,7 @@ const App = {
     if (this.cart.length === 0) {
       cartItemsList.innerHTML = `
         <div class="empty-cart">
-          <div class="empty-icon">🛒</div>
+          <div class="empty-icon">🛍️</div>
           <p>ยังไม่มีสินค้าในตะกร้า</p>
         </div>
       `;
@@ -386,29 +480,30 @@ const App = {
 
     cartItemsList.innerHTML = this.cart.map(item => `
       <div class="cart-item">
-        <img src="${item.image_url || 'https://placehold.co/100?text=Item'}" 
+        <img src="${item.image_url || 'https://placehold.co/100?text=GEONCE'}" 
              alt="${item.name}" 
              class="cart-item-image">
         <div class="cart-item-info">
           <div class="cart-item-title">${item.name}</div>
-          <div class="cart-item-price">฿${item.price.toLocaleString()}</div>
+          <span class="cart-item-size">Size: ${item.size}</span>
+          <div class="cart-item-price">฿${(item.price * item.quantity).toLocaleString()}</div>
         </div>
         <div class="cart-item-controls">
-          <button class="qty-btn" onclick="App.updateQuantity('${item.id}', -1)">−</button>
+          <button class="qty-btn" onclick="App.updateQuantity('${item.cartItemId}', -1)">−</button>
           <span class="qty-number">${item.quantity}</span>
-          <button class="qty-btn" onclick="App.updateQuantity('${item.id}', 1)">+</button>
-          <button class="remove-btn" onclick="App.removeFromCart('${item.id}')" title="ลบ">🗑️</button>
+          <button class="qty-btn" onclick="App.updateQuantity('${item.cartItemId}', 1)">+</button>
+          <button class="remove-btn" onclick="App.removeFromCart('${item.cartItemId}')" title="ลบ">🗑️</button>
         </div>
       </div>
     `).join("");
   },
 
   /**
-   * เปิด Modal กรอกข้อมูลจัดส่งและยืนยันออเดอร์
+   * เปิด Modal กรอกข้อมูลจัดส่ง
    */
   openCheckoutModal() {
     if (this.cart.length === 0) {
-      showToast("กรุณาเลือกสินค้าก่อนทำการสั่งซื้อ", "warning");
+      showToast("กรุณาเลือกสินค้าก่อนดำเนินการ", "warning");
       return;
     }
 
@@ -418,7 +513,7 @@ const App = {
     const checkoutSummary = document.getElementById("checkoutSummary");
     const customerNameInput = document.getElementById("customerNameInput");
 
-    // เติมชื่อลูกค้าอัตโนมัติจาก LINE Profile
+    // ดึงชื่อลูกค้าอัตโนมัติจาก LINE Profile
     if (customerNameInput && LiffHandler.profile) {
       customerNameInput.value = LiffHandler.profile.displayName || "";
     }
@@ -428,7 +523,7 @@ const App = {
       checkoutSummary.innerHTML = `
         <div class="summary-row">
           <span>จำนวนสินค้า:</span>
-          <span>${totalItems} รายการ</span>
+          <span>${totalItems} ชิ้น</span>
         </div>
         <div class="summary-row total">
           <span>ยอดชำระทั้งสิ้น:</span>
@@ -455,22 +550,72 @@ const App = {
   },
 
   /**
-   * จัดการส่งออเดอร์ไปยัง Google Apps Script Web App
+   * ดำเนินการไปยังหน้าชำระเงิน PromptPay QR (Step 2)
    */
-  async handleCheckoutSubmit() {
-    if (this.isLoading) return;
-
+  proceedToPaymentModal() {
     const customerName = document.getElementById("customerNameInput").value.trim();
     const phone = document.getElementById("phoneInput").value.trim();
     const address = document.getElementById("addressInput").value.trim();
     const note = document.getElementById("noteInput").value.trim();
 
-    if (!phone) {
-      showToast("กรุณากรอกเบอร์โทรศัพท์", "warning");
+    if (!phone || !address) {
+      showToast("กรุณากรอกเบอร์โทรและที่อยู่จัดส่งให้ครบถ้วน", "warning");
       return;
     }
 
     const { totalAmount } = this.getCartTotals();
+
+    // บันทึกข้อมูลฟอร์มไว้ชั่วคราว
+    this.pendingCheckoutData = {
+      customerName,
+      phone,
+      address,
+      note,
+      totalAmount
+    };
+
+    this.closeCheckoutModal();
+
+    // เตรียมหน้าต่าง PromptPay QR Modal
+    const paymentModal = document.getElementById("paymentModal");
+    const promptpayAmount = document.getElementById("promptpayAmount");
+    const promptpayQrImg = document.getElementById("promptpayQrImg");
+    const promptpayNumberText = document.getElementById("promptpayNumberText");
+    const promptpayNameText = document.getElementById("promptpayNameText");
+
+    if (promptpayAmount) promptpayAmount.textContent = `฿${totalAmount.toLocaleString()}`;
+    if (promptpayNumberText) promptpayNumberText.textContent = CONFIG.PROMPTPAY_NUMBER;
+    if (promptpayNameText) promptpayNameText.textContent = CONFIG.PROMPTPAY_NAME;
+
+    // สร้าง QR Code ผ่าน PromptPay API service ตามยอดสั่งซื้อจริง
+    if (promptpayQrImg) {
+      promptpayQrImg.src = `https://promptpay.io/${CONFIG.PROMPTPAY_NUMBER}/${totalAmount}.png`;
+    }
+
+    if (paymentModal) {
+      paymentModal.classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+  },
+
+  /**
+   * ปิด Modal ชำระเงิน PromptPay
+   */
+  closePaymentModal() {
+    const paymentModal = document.getElementById("paymentModal");
+    if (paymentModal) {
+      paymentModal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+  },
+
+  /**
+   * ยืนยันการชำระเงินและส่งคำสั่งซื้อไปยัง Google Apps Script Web App
+   */
+  async handleOrderSubmission() {
+    if (this.isLoading || !this.pendingCheckoutData) return;
+
+    const { customerName, phone, address, note, totalAmount } = this.pendingCheckoutData;
     const lineUserId = LiffHandler.profile ? LiffHandler.profile.userId : "";
 
     const orderPayload = {
@@ -480,14 +625,16 @@ const App = {
       address: address,
       note: note,
       items: this.cart,
-      total_amount: totalAmount
+      total_amount: totalAmount,
+      payment_method: "PromptPay QR",
+      payment_status: "WAITING_PAYMENT"
     };
 
-    const submitBtn = document.getElementById("submitOrderBtn");
+    const confirmPaidBtn = document.getElementById("confirmPaidBtn");
     this.isLoading = true;
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `<span class="spinner-small"></span> กำลังบันทึกออเดอร์...`;
+    if (confirmPaidBtn) {
+      confirmPaidBtn.disabled = true;
+      confirmPaidBtn.innerHTML = `<span class="spinner-small"></span> กำลังบันทึกคำสั่งซื้อ...`;
     }
 
     try {
@@ -495,7 +642,7 @@ const App = {
       const isGasConfigured = CONFIG.GAS_API_URL && CONFIG.GAS_API_URL !== "YOUR_GAS_WEB_APP_URL";
 
       if (isGasConfigured) {
-        // ใช้ text/plain ในการยิง request เพื่อข้าม CORS Preflight (OPTIONS) ของ Google Apps Script
+        // ใช้ text/plain ส่ง POST เพื่อข้าม CORS Preflight (OPTIONS) ของ Apps Script
         const response = await fetch(CONFIG.GAS_API_URL, {
           method: "POST",
           mode: "cors",
@@ -508,10 +655,10 @@ const App = {
         orderResult = await response.json();
 
         if (orderResult.status !== "success") {
-          throw new Error(orderResult.message || "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ");
+          throw new Error(orderResult.message || "เกิดข้อผิดพลาดในการบันทึกออเดอร์");
         }
       } else {
-        // โหมดจำลอง (Mock Order) เมื่อยังไม่ได้ผูก Web App URL จริง
+        // Mock fallback กรณีทดสอบเครื่อง local
         await new Promise(r => setTimeout(r, 1200));
         orderResult = {
           status: "success",
@@ -521,7 +668,7 @@ const App = {
         };
       }
 
-      // เตรียมข้อมูลสรุปออเดอร์สำหรับ Flex Message
+      // ข้อมูลสำหรับส่ง Flex Message ใบเสร็จเข้าแชท LINE
       const confirmedOrderData = {
         order_id: orderResult.order_id,
         timestamp: orderResult.timestamp || new Date().toLocaleString("th-TH"),
@@ -533,25 +680,26 @@ const App = {
         total_amount: totalAmount
       };
 
-      // ส่งข้อความ Flex Message เข้าห้องแชท LINE ผ่าน LIFF SDK
+      // ส่ง Flex Message ใบเสร็จเข้าแชท LINE
       await LiffHandler.sendOrderReceipt(confirmedOrderData);
 
-      // ล้างตะกร้าสินค้า
+      // ล้างตะกร้าและปิด Payment Modal
       this.cart = [];
       this.updateCartBadge();
-      this.closeCheckoutModal();
+      this.closePaymentModal();
+      this.pendingCheckoutData = null;
 
       // เปิดหน้าจอสำเร็จ
       this.openSuccessModal(confirmedOrderData);
 
     } catch (err) {
-      console.error("❌ Checkout Error:", err);
+      console.error("❌ Order Submission Error:", err);
       showToast("เกิดข้อผิดพลาด: " + err.message, "error");
     } finally {
       this.isLoading = false;
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `ยืนยันการสั่งซื้อ`;
+      if (confirmPaidBtn) {
+        confirmPaidBtn.disabled = false;
+        confirmPaidBtn.innerHTML = `ฉันโอนเงินเรียบร้อยแล้ว (ยืนยันคำสั่งซื้อ)`;
       }
     }
   },
@@ -582,7 +730,6 @@ const App = {
       successModal.classList.remove("active");
       document.body.style.overflow = "";
     }
-    // หากเปิดใน LINE App ให้สามารถปิดหน้าต่าง LIFF ได้
     if (LiffHandler.isInitialized && liff.isInClient()) {
       liff.closeWindow();
     }

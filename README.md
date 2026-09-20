@@ -1,6 +1,6 @@
-# 🛒 ระบบสั่งซื้อสินค้าผ่าน LINE LIFF + Google Apps Script + Google Sheets
+# 🛍️ GEONCE Official Store - ระบบสั่งซื้อเสื้อผ้าผ่าน LINE LIFF & PromptPay QR
 
-ระบบสั่งซื้อสินค้า E-Commerce แบบ Serverless สมบูรณ์แบบ พัฒนาด้วย **LINE LIFF SDK v2**, **Google Apps Script (GAS)**, และใช้ **Google Sheets** เป็นฐานข้อมูลหลัก ลูกค้าสามารถเลือกสินค้า ใส่ตะกร้า กรอกข้อมูลจัดส่ง และเมื่อยืนยัน ระบบจะบันทึกออเดอร์ลง Google Sheets พร้อมส่ง **ใบเสร็จรับเงินสุดพรีเมียม (LINE Flex Message)** กลับเข้าห้องแชท LINE ของลูกค้าโดยอัตโนมัติ
+ระบบ E-Commerce สั่งซื้อสินค้าแบรนด์เสื้อผ้าและสตรีทแวร์ **GEONCE** แบบ Serverless ผ่าน **LINE LIFF SDK v2**, **Google Apps Script (GAS)**, และใช้ **Google Sheets** เป็นฐานข้อมูล ลูกค้าสามารถเลือกไซส์เสื้อผ้า (S, M, L, XL), ใส่ตะกร้า, สแกนชำระเงินผ่าน **QR Code PromptPay แบบระบุยอดตรงอัตโนมัติ**, และรับ **ใบเสร็จรับเงินสุดพรีเมียม (LINE Flex Message)** ส่งตรงเข้าห้องแชท LINE ทันที
 
 ---
 
@@ -8,16 +8,16 @@
 
 ```text
 Geonce/
-├── index.html            # หน้าเว็บแอปพลิเคชันหลัก (UI ร้านค้า, ตะกร้า, เช็คเอาต์, LIFF)
+├── index.html            # หน้าเว็บแอปพลิเคชันหลัก (UI ร้านค้า GEONCE, ตะกร้า, เลือกรหัส/ไซส์, สแกน PromptPay QR)
 ├── css/
-│   └── style.css         # สไตล์ดีไซน์ระดับพรีเมียม (Mobile-first, Responsive, Animations)
+│   └── style.css         # สไตล์ดีไซน์สตรีทแวร์มินิมอล (Black & Slate Streetwear, Mobile-first, Responsive)
 ├── js/
-│   ├── config.js         # จุดตั้งค่า LIFF ID และ GAS Web App URL
-│   ├── liff-handler.js   # โมดูลจัดการ LINE LIFF SDK และสร้าง Flex Message ใบเสร็จ
-│   └── app.js            # ตรรกะของร้านค้า (โหลดสินค้า, จัดการตะกร้า, สั่งซื้อ)
+│   ├── config.js         # จุดตั้งค่า LIFF ID, GAS API URL, เบอร์ PromptPay และชื่อบัญชี
+│   ├── liff-handler.js   # โมดูล LINE LIFF SDK ดึง Profile และสร้าง Flex Message ใบเสร็จ GEONCE
+│   └── app.js            # ตรรกะของร้าน (โหลดสินค้า, ระบบเลือกไซส์, ตะกร้า, คำนวณ QR PromptPay, สั่งซื้อ)
 ├── gas/
-│   ├── Code.gs           # โค้ด Backend API (doGet ดึงสินค้า, doPost บันทึกออเดอร์, ตัดสต็อก)
-│   └── setup_sheet.gs    # ตัวช่วยสร้างตาราง Products และ Orders ใน Google Sheets อัตโนมัติใน 1 คลิก
+│   ├── Code.gs           # Backend Web App API (doGet ดึงสินค้า, doPost บันทึกออเดอร์พร้อมช่องทาง PromptPay, ตัดสต็อก)
+│   └── setup_sheet.gs    # ตัวช่วยสร้างโครงสร้างตาราง Products และ Orders ใน Google Sheets อัตโนมัติ
 ├── README.md             # คู่มือการติดตั้งและใช้งานทีละขั้นตอน
 └── .gitignore
 ```
@@ -26,16 +26,16 @@ Geonce/
 
 ## 🗄️ โครงสร้างฐานข้อมูล (Google Sheets Schema)
 
-สร้าง Google Sheet ขึ้นมา 1 ไฟล์ ประกอบด้วย 2 แผ่นงาน (Tabs):
+สร้าง Google Sheet 1 ไฟล์ ประกอบด้วย 2 แผ่นงาน (Tabs):
 
-### 1. Sheet: `Products` (ข้อมูลสินค้า)
+### 1. Sheet: `Products` (ข้อมูลสินค้าเสื้อผ้า)
 | คอลัมน์ | ชื่อ Header | ประเภท | รายละเอียด |
 | :--- | :--- | :--- | :--- |
-| **A** | `id` | ข้อความ | รหัสสินค้า เช่น `P001` |
-| **B** | `name` | ข้อความ | ชื่อสินค้า เช่น `Espresso Signature Blend` |
-| **C** | `category` | ข้อความ | หมวดหมู่ เช่น `Coffee`, `Tea`, `Bakery` |
-| **D** | `price` | ตัวเลข | ราคาต่อชิ้น เช่น `95` |
-| **E** | `description` | ข้อความ | คำอธิบายสินค้า |
+| **A** | `id` | ข้อความ | รหัสสินค้า เช่น `G-TS01`, `G-HD02` |
+| **B** | `name` | ข้อความ | ชื่อสินค้า เช่น `GEONCE Heavyweight Oversized Tee` |
+| **C** | `category` | ข้อความ | หมวดหมู่ เช่น `T-Shirts`, `Hoodies`, `Pants`, `Accessories` |
+| **D** | `price` | ตัวเลข | ราคาต่อชิ้น เช่น `790`, `1490` |
+| **E** | `description` | ข้อความ | รายละเอียดเนื้อผ้า ขนาด และทรงเสื้อ |
 | **F** | `image_url` | ข้อความ | ลิงก์ URL รูปภาพสินค้า |
 | **G** | `stock` | ตัวเลข | จำนวนคงเหลือในสต็อก |
 | **H** | `status` | ข้อความ | สถานะสินค้า (`ACTIVE` หรือ `OUT_OF_STOCK`) |
@@ -46,27 +46,29 @@ Geonce/
 | **A** | `order_id` | ข้อความ | รหัสคำสั่งซื้อ เช่น `ORD-20260920-1234` |
 | **B** | `timestamp` | วันเวลา | วันที่และเวลาที่สั่งซื้อ |
 | **C** | `line_user_id` | ข้อความ | LINE User ID ของผู้สั่ง |
-| **D** | `customer_name` | ข้อความ | ชื่อลูกค้า (ดึงจาก LINE Profile) |
+| **D** | `customer_name` | ข้อความ | ชื่อลูกค้าผู้สั่งซื้อ |
 | **E** | `phone` | ข้อความ | เบอร์โทรศัพท์ติดต่อ |
-| **F** | `address` | ข้อความ | ที่อยู่จัดส่ง หรือสาขาที่รับ |
-| **G** | `items_summary` | ข้อความ | สรุปรายการสินค้า เช่น `Espresso (x2), Croissant (x1)` |
-| **H** | `items_json` | JSON | ข้อมูลสินค้าโครงสร้าง Array เพื่อนำไปประมวลผลต่อ |
-| **I** | `total_amount` | ตัวเลข | ยอดรวมเงินทั้งสิ้น (บาท) |
-| **J** | `status` | ข้อความ | สถานะออเดอร์ (`PENDING`, `CONFIRMED`, `DELIVERED`, `CANCELLED`) |
-| **K** | `note` | ข้อความ | หมายเหตุเพิ่มเติมจากลูกค้า |
+| **F** | `address` | ข้อความ | ที่อยู่จัดส่งพัสดุ |
+| **G** | `items_summary` | ข้อความ | สรุปสินค้าและไซส์ เช่น `GEONCE Heavyweight Tee [Size: L] (x1)` |
+| **H** | `items_json` | JSON | โครงสร้างข้อมูล JSON อาร์เรย์ของสินค้า |
+| **I** | `total_amount` | ตัวเลข | ยอดรวมชำระทั้งสิ้น (บาท) |
+| **J** | `payment_method` | ข้อความ | ช่องทางชำระเงิน (`PromptPay QR`) |
+| **K** | `payment_status` | ข้อความ | สถานะการชำระเงิน (`WAITING_PAYMENT` รอตรวจสอบสลิป) |
+| **L** | `status` | ข้อความ | สถานะออเดอร์ (`PENDING`, `CONFIRMED`, `SHIPPED`, `CANCELLED`) |
+| **M** | `note` | ข้อความ | หมายเหตุเพิ่มเติมจากลูกค้า |
 
 ---
 
-## 🚀 คู่มือการติดตั้งทีละขั้นตอน (Step-by-Step Setup Guide)
+## 🚀 คู่มือการติดตั้งและตั้งค่าระบบ (Setup Guide)
 
 ### ขั้นตอนที่ 1: เตรียม Google Sheets และติดตั้ง Apps Script
-1. ไปที่ [Google Sheets](https://sheets.new) และสร้าง Spreadsheet ใหม่ ตั้งชื่อเช่น `Geonce Database`
+1. ไปที่ [Google Sheets](https://sheets.new) และสร้าง Spreadsheet ใหม่ ตั้งชื่อเช่น `GEONCE Database`
 2. คลิกที่เมนูด้านบน **Extensions (ส่วนขยาย)** > **Apps Script**
-3. คัดลอกโค้ดจากไฟล์ [`gas/setup_sheet.gs`](gas/setup_sheet.gs) ไปวางใน Apps Script
-4. ที่แถบเมนูด้านบน เลือกฟังก์ชัน **`setupDatabase`** แล้วกด **Run (เรียกใช้)**
-   - *หมายเหตุ: หากมีหน้าต่างขอสิทธิ์ ให้กดยืนยัน Advanced > Go to Untitled (unsafe) > Allow*
-5. กลับมาดูที่ Google Sheet จะพบว่ามีแท็บ `Products` และ `Orders` พร้อมข้อมูลสินค้าตัวอย่างถูกสร้างขึ้นเรียบร้อยแล้ว
-6. กลับมาที่ Apps Script ลบโค้ดเดิมออก แล้วนำโค้ดทั้งหมดจาก [`gas/Code.gs`](gas/Code.gs) ไปวางแทนที่ แล้วกด Save (Ctrl+S หรือ Cmd+S)
+3. คัดลอกโค้ดจากไฟล์ [`gas/Code.gs`](gas/Code.gs) ทั้งหมดไปวางใน Apps Script (ไฟล์เดียวจบ ครบทั้ง Setup และ API)
+4. ที่แถบด้านบน เลือกฟังก์ชัน **`setupDatabase`** แล้วกดปุ่ม **Run (เรียกใช้)**
+   - *หมายเหตุ: หากมีหน้าต่างขอสิทธิ์ ให้กด Advanced > Go to Untitled project (unsafe) > Allow*
+5. กลับมาดูที่ Google Sheets จะพบแท็บ `Products` และ `Orders` พร้อมหัวตารางถูกสร้างขึ้นเรียบร้อย
+6. เพิ่มข้อมูลสินค้าเสื้อผ้าของคุณลงในชีท `Products` ได้ทันที
 
 ---
 
@@ -74,93 +76,77 @@ Geonce/
 1. ในหน้า Apps Script คลิกปุ่มสีน้ำเงินมุมขวาบน **Deploy (การทำให้ใช้งานได้)** > **New deployment (การทำให้ใช้งานได้ใหม่)**
 2. คลิกไอคอนฟันเฟือง ⚙️ ด้านซ้าย เลือก **Web app (เว็บแอป)**
 3. ตั้งค่าดังนี้:
-   - **Description**: `LIFF API v1`
-   - **Execute as (ดำเนินการในฐานะ)**: **Me (ฉัน - your_email@gmail.com)** *(สำคัญมาก! เพื่อให้บอทอ่านเขียนชีทได้)*
-   - **Who has access (ผู้มีสิทธิ์เข้าถึง)**: **Anyone (ทุกคน)** *(สำคัญมาก! เพื่อให้ LIFF เรียก API ได้โดยไม่ต้องล็อกอินบัญชี Google)*
-4. กด **Deploy**
-5. คัดลอก **Web app URL** ที่ลงท้ายด้วย `/exec` เก็บไว้ (เช่น `https://script.google.com/macros/s/AKfycb.../exec`)
+   - **Description**: `GEONCE API v1`
+   - **Execute as (ดำเนินการในฐานะ)**: **Me (ฉัน - your_email@gmail.com)**
+   - **Who has access (ผู้มีสิทธิ์เข้าถึง)**: **Anyone (ทุกคน)** *(⚠️ สำคัญมาก! ต้องเลือก Anyone เพื่อให้ระบบเรียกได้โดยไม่ต้องล็อกอิน Google)*
+4. กด **Deploy** แล้วคัดลอก **Web app URL** ที่ลงท้ายด้วย `/exec`
 
 ---
 
-### ขั้นตอนที่ 3: สร้าง LINE Login & LINE LIFF App
-1. เข้าไปที่ [LINE Developers Console](https://developers.line.biz/) แล้วเข้าสู่ระบบด้วยบัญชี LINE
-2. สร้าง **Provider** (หรือเลือก Provider เดิมที่มี)
-3. กด **Create a new channel** > เลือก **LINE Login**
-4. กรอกข้อมูล Channel:
-   - **Channel type**: LINE Login
-   - **Provider**: เลือก Provider ของคุณ
-   - **Channel name**: ชื่อร้านของคุณ เช่น `Geonce Store`
-   - **App types**: เลือก **Web app**
-   - กดยอมรับเงื่อนไขและกด **Create**
-5. คลิกเข้าไปที่แท็บ **LIFF** ด้านบน > กด **Add**
-6. กำหนดค่า LIFF App:
-   - **LIFF app name**: `Geonce LIFF Order`
-   - **Size**: **Full** (เต็มจอ) หรือ **Tall**
-   - **Endpoint URL**: ใส่ URL เว็บของคุณ (เช่น GitHub Pages หรือใส่ `https://example.com` ไว้ชั่วคราวขณะพัฒนา)
-   - **Scopes**: ติ๊กถูกเลือก 3 ค่า:
+### ขั้นตอนที่ 3: ตั้งค่า LINE Developers & LINE LIFF
+1. เข้าสู่ระบบที่ [LINE Developers Console](https://developers.line.biz/)
+2. สร้าง Channel ชนิด **LINE Login**
+3. คลิกแท็บ **LIFF** > กด **Add**
+4. กำหนดค่า:
+   - **LIFF app name**: `GEONCE Store`
+   - **Size**: **Full** (เต็มจอ)
+   - **Endpoint URL**: ใส่ URL ของ GitHub Pages เช่น `https://mrteephob-del.github.io/Geonce/`
+   - **Scopes**: ติ๊กถูก 3 รายการ:
      - `profile`
      - `openid`
-     - `chat_message.write` *(⚠️ สำคัญมาก! ต้องเลือกอันนี้เพื่อให้คำสั่ง `liff.sendMessages()` ส่งใบเสร็จเข้าห้องแชทได้)*
-   - **Bot link feature**: Normal หรือ On (ตามต้องการ)
-7. กด **Add** ระบบจะสร้าง **LIFF ID** ให้ (เช่น `200xxxxxxx-xxxxxxx`) ให้คัดลอกเก็บไว้
+     - **`chat_message.write`** *(จำเป็นมากสำหรับการส่งใบเสร็จเข้าห้องแชท)*
+5. กดปุ่ม **Add** แล้วคัดลอก **LIFF ID** (เช่น `200xxxxxxx-xxxxxxx`)
 
 ---
 
-### ขั้นตอนที่ 4: นำค่ามาใส่ในไฟล์โค้ด
-เปิดไฟล์ [`js/config.js`](js/config.js) แล้วนำค่าที่ได้มาแทนที่:
+### ขั้นตอนที่ 4: กำหนดค่าในไฟล์ [`js/config.js`](js/config.js)
+เปิดไฟล์ [`js/config.js`](js/config.js) แล้วนำค่าของคุณมาใส่:
 
 ```javascript
 const CONFIG = {
-  // 1. นำ LIFF ID จากขั้นตอนที่ 3 มาใส่
+  // 1. LIFF ID จาก LINE Developers Console
   LIFF_ID: "200xxxxxxx-xxxxxxx",
 
-  // 2. นำ Web App URL จากขั้นตอนที่ 2 มาใส่
-  GAS_API_URL: "https://script.google.com/macros/s/AKfycb.../exec",
+  // 2. Web App URL จาก Google Apps Script (ลงท้ายด้วย /exec)
+  GAS_API_URL: "https://script.google.com/macros/s/AKfycbyQesQYj6FUG45kIVB6Lsv4ie7gEiQ1XGZSlWZhh_d5PDqLDSZU4Lwo80-pFtXqOQuiWA/exec",
 
-  SHOP_NAME: "Geonce Cafe & Bakery",
+  SHOP_NAME: "GEONCE",
+  SHOP_TAGLINE: "Official Streetwear & Contemporary Apparel",
   CURRENCY_SYMBOL: "฿",
-  ...
+
+  // 3. กำหนดเบอร์โทรศัพท์ (10 หลัก) หรือเลขบัตร ปชช./นิติบุคคล (13 หลัก) สำหรับสร้าง PromptPay QR
+  PROMPTPAY_NUMBER: "0812345678",
+  PROMPTPAY_NAME: "GEONCE OFFICIAL STORE",
+  BANK_NAME: "พร้อมเพย์ (PromptPay)",
+
+  DEFAULT_SIZES: ["S", "M", "L", "XL"],
+  MOCK_PRODUCTS: []
 };
 ```
 
 ---
 
 ### ขั้นตอนที่ 5: นำขึ้น GitHub Pages เพื่อใช้งานจริง
-1. Commit และ Push ไฟล์ขึ้น GitHub Repository:
+1. Commit และ Push ขึ้น GitHub:
    ```bash
    git add .
-   git commit -m "Complete LINE LIFF ordering system"
+   git commit -m "feat: rebrand to GEONCE clothing with PromptPay QR payment"
    git push origin main
    ```
-2. ไปที่ GitHub Repository ของคุณ > **Settings** > **Pages**
-3. ในส่วน **Build and deployment**:
-   - Source: เลือก **Deploy from a branch**
-   - Branch: เลือก **main** / โฟลเดอร์ `/ (root)` แล้วกด **Save**
-4. รอประมาณ 1-2 นาที คุณจะได้ URL ของ GitHub Pages (เช่น `https://mrteephob-del.github.io/Geonce/`)
-5. นำ URL นี้กลับไปใส่ใน **Endpoint URL** ของ LIFF App ใน LINE Developers Console
+2. ไปที่ GitHub Repository > **Settings** > **Pages**
+3. ใต้หัวข้อ *Branch* เลือก **`main`** โฟลเดอร์ **`/ (root)`** แล้วกด **Save**
+4. นำ URL GitHub Pages ที่ได้ไปกรอกใน **Endpoint URL** ของ LIFF App ใน LINE Developers Console
 
 ---
 
-## 📱 วิธีทดสอบใช้งาน
-1. คัดลอก **LIFF URL** (เช่น `https://liff.line.me/200xxxxxxx-xxxxxxx`)
-2. ส่งลิงก์นี้เข้าไปในห้องแชท LINE แล้วกดเปิดลิงก์บนสมาร์ทโฟน
-3. ระบบจะขออนุญาตสิทธิ์การเข้าถึงข้อมูลโปรไฟล์และส่งข้อความ
-4. เลือกสินค้าลงตะกร้า กดดูตะกร้า ปรับเพิ่มลดจำนวน และกดดำเนินการสั่งซื้อ
-5. กรอกเบอร์โทรและที่อยู่จัดส่ง แล้วกดยืนยันการสั่งซื้อ
-6. **ผลลัพธ์**:
-   - บันทึกแถวใหม่ลงในแผ่นงาน `Orders` ของ Google Sheets ทันที
-   - อัปเดตตัดจำนวนสต็อกในแผ่นงาน `Products`
-   - ส่งข้อความ **LINE Flex Message (Receipt Bubble)** สรุปรายการคำสั่งซื้อพร้อมยอดเงินกลับเข้ามาในห้องแชท LINE ของคุณทันที!
-
----
-
-## 💡 เทคนิคและข้อควรระวังสำคัญสำหรับนักพัฒนา (Developer Notes)
-
-1. **การแก้ปัญหา CORS ใน Google Apps Script**:
-   - Google Apps Script จะทำการ Redirect (HTTP 302) ไปยัง `script.googleusercontent.com` เมื่อเรียก API
-   - บราวเซอร์ที่ส่งคำขอแบบ `application/json` จะยิง Preflight `OPTIONS` ล่วงหน้า ซึ่ง Apps Script ไม่รองรับและจะคืนค่า 405 Method Not Allowed
-   - ในโปรเจกต์นี้แก้ปัญหาด้วยการส่ง Request POST เป็นแบบ `Content-Type: text/plain;charset=utf-8` พร้อมแปลง payload เป็น JSON string ทำให้ข้าม CORS preflight ได้อย่างราบรื่น 100%
-2. **การป้องกัน Race Condition ด้วย `LockService`**:
-   - ใน `Code.gs` ใช้ `LockService.getScriptLock()` เพื่อรอคิวการบันทึกข้อมูลสูงสุด 30 วินาที ป้องกันกรณีลูกค้าหลายท่านกดยืนยันออเดอร์พร้อมกันในเสี้ยววินาที
-3. **การทดสอบในสภาพแวดล้อม Local / Mock Mode**:
-   - ใน `js/config.js` และ `js/app.js` มีระบบ Mock Fallback อัตโนมัติ หากยังไม่ได้ระบุ LIFF ID หรือ API URL คุณยังคงสามารถเปิดไฟล์ `index.html` บนบราวเซอร์เพื่อทดสอบ UI และ Flow การทำงานได้ทันทีโดยที่โปรแกรมไม่ Error
+## 💳 ขั้นตอนการสั่งซื้อและการชำระเงิน (Customer Flow)
+1. ลูกค้าเปิดแอปผ่าน LINE LIFF (เช่น `https://liff.line.me/200xxxxxxx-xxxxxxx`)
+2. เลือกสินค้าเสื้อผ้าที่ต้องการ แล้วเลือกขนาด (**Size: S, M, L, XL**) เพิ่มลงตะกร้า
+3. เข้าสู่ตะกร้าสินค้า ตรวจสอบรายการ และกดยืนยันสั่งซื้อ
+4. กรอกชื่อผู้รับ เบอร์โทรศัพท์ และที่อยู่จัดส่งพัสดุ
+5. ระบบจะแสดงหน้าต่าง **PromptPay QR Code** พร้อมยอดเงินสุทธิตรงตามยอดสั่งซื้อ และมีปุ่มคัดลอกเลขพร้อมเพย์
+6. ลูกค้าสแกนโอนเงินผ่านแอปธนาคาร แล้วกดปุ่ม **"ฉันโอนเงินเรียบร้อยแล้ว (ยืนยันคำสั่งซื้อ)"**
+7. **ระบบทำงานอัตโนมัติ**:
+   - บันทึกคำสั่งซื้อลงแผ่นงาน `Orders` พร้อมระบุสถานะ `WAITING_PAYMENT` (รอตรวจสอบสลิป)
+   - ตัดสต็อกสินค้าในแผ่นงาน `Products`
+   - ส่ง **LINE Flex Message** ใบเสร็จดีไซน์สตรีทแวร์สุดหรูเข้าห้องแชท LINE ของลูกค้า พร้อมข้อความแนะนำให้ส่งรูปสลิปเข้ามาในแชทเพื่อยืนยันออเดอร์!
